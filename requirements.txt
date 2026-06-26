@@ -1,0 +1,7 @@
+--index-url https://artefact-repo.apps.eul.sncf.fr/artifactory/api/pypi/pypi-public/simple/
+streamlit~=1.38.0
+pandas~=2.2.3
+plotly>=5.15.0
+databricks-sdk>=0.20.0
+duckdb~=1.1.3
+pyarrow>=14.0.0
