@@ -84,8 +84,8 @@ def _load_workspaces(run_query) -> None:
         SELECT
             CAST(workspace_id AS STRING) AS workspace_id,
             workspace_name,
-            UPPER(split(workspace_name, '-')[5]) AS trigramme,
-            UPPER(split(workspace_name, '-')[6]) AS environnement
+            UPPER(get(split(workspace_name, '-'), 5)) AS trigramme,
+            UPPER(get(split(workspace_name, '-'), 6)) AS environnement
         FROM workspaces_latest
         WHERE status = 'RUNNING'
         ORDER BY workspace_name

@@ -22,6 +22,18 @@ from dashboards.catalog_config import fq
 from dashboards.date_filter import f_ts_date, f_workspace, period_label
 
 
+def _int_or_zero(value) -> int:
+    if value is None:
+        return 0
+    try:
+        number = float(value)
+        if number != number:  # NaN
+            return 0
+        return int(number)
+    except (TypeError, ValueError):
+        return 0
+
+
 def render_runs_overview(run_query) -> None:
     page_header("Overview runs", fq("lakeflow.job_run_timeline"))
     df, err = run_query(f"""
@@ -35,12 +47,17 @@ def render_runs_overview(run_query) -> None:
     if show_error(err) or df is None or df.empty:
         return
     r = df.iloc[0]
-    total = int(r["total"] or 1)
+    total = _int_or_zero(r["total"])
+    ok = _int_or_zero(r["ok"])
+    ko = _int_or_zero(r["ko"])
+    avg_min = r["avg_min"]
+    if avg_min != avg_min:  # NaN
+        avg_min = None
     metrics_row([
         (f"Runs ({period_label()})", f"{total:,}", None),
-        ("Succès", f"{int(r['ok']):,}", f"{int(r['ok'])/total*100:.0f}%"),
-        ("Échecs", f"{int(r['ko']):,}", None),
-        ("Durée moy.", f"{r['avg_min']} min", None),
+        ("Succès", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—"),
+        ("Échecs", f"{ko:,}", None),
+        ("Durée moy.", f"{avg_min} min" if avg_min is not None else "—", None),
     ])
     daily, _ = run_query(f"""
         SELECT CAST(start_ts AS DATE) AS day, COUNT(*) AS runs

@@ -74,7 +74,18 @@ def render_runtime_versions(run_query) -> None:
     df_rt, err = run_query("""
         SELECT
             cp.dbr_version,
-            UPPER(CONCAT(split(ws.workspace_name, '-')[5], '-', split(ws.workspace_name, '-')[6])) AS workspace_short,
+            COALESCE(
+                NULLIF(
+                    UPPER(CONCAT(
+                        COALESCE(get(split(ws.workspace_name, '-'), 5), ''),
+                        '-',
+                        COALESCE(get(split(ws.workspace_name, '-'), 6), '')
+                    )),
+                    '-'
+                ),
+                UPPER(ws.workspace_name),
+                'Autre'
+            ) AS workspace_short,
             COUNT(*) AS nombre
         FROM (
             SELECT cluster_id, dbr_version, workspace_id
