@@ -14,24 +14,13 @@ from dashboards.components import (
     plotly_figure,
     show_error,
     status_kpi_cards,
+    int_or_zero,
     COLORS,
     _drop_blank_categories,
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
 from dashboards.date_filter import f_ts_date, f_workspace, period_label
-
-
-def _int_or_zero(value) -> int:
-    if value is None:
-        return 0
-    try:
-        number = float(value)
-        if number != number:  # NaN
-            return 0
-        return int(number)
-    except (TypeError, ValueError):
-        return 0
 
 
 def render_runs_overview(run_query) -> None:
@@ -47,9 +36,9 @@ def render_runs_overview(run_query) -> None:
     if show_error(err) or df is None or df.empty:
         return
     r = df.iloc[0]
-    total = _int_or_zero(r["total"])
-    ok = _int_or_zero(r["ok"])
-    ko = _int_or_zero(r["ko"])
+    total = int_or_zero(r["total"])
+    ok = int_or_zero(r["ok"])
+    ko = int_or_zero(r["ko"])
     avg_min = r["avg_min"]
     if avg_min != avg_min:  # NaN
         avg_min = None

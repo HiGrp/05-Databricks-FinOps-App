@@ -23,6 +23,31 @@ NULL_LABEL = "(non renseigné)"
 _BLANK_LABELS = frozenset({"", "nan", "none", "<na>", "nat", "undefined", "null"})
 
 
+def int_or_zero(value) -> int:
+    if value is None:
+        return 0
+    try:
+        number = float(value)
+        if number != number:  # NaN
+            return 0
+        return int(number)
+    except (TypeError, ValueError):
+        return 0
+
+
+def format_int(value, suffix: str = "") -> str:
+    if value is None:
+        return "—"
+    try:
+        number = float(value)
+        if number != number:  # NaN
+            return "—"
+        text = f"{int(number):,}"
+        return f"{text} {suffix}".strip() if suffix else text
+    except (TypeError, ValueError):
+        return "—"
+
+
 def _coerce_label(value) -> str:
     if value is None:
         return NULL_LABEL

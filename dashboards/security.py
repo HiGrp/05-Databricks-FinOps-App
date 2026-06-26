@@ -12,6 +12,7 @@ from dashboards.components import (
     pie_chart,
     plotly_figure,
     show_error,
+    format_int,
     COLORS,
     _coerce_label,
     _drop_blank_categories,
@@ -34,9 +35,9 @@ def render_audit_overview(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        (f"Events ({period_label()})", f"{int(r['total']):,}", None),
-        ("Utilisateurs uniques", str(int(r["users"])), None),
-        ("Events erreur (4xx/5xx)", str(int(r["errors"])), None),
+        (f"Events ({period_label()})", format_int(r["total"]), None),
+        ("Utilisateurs uniques", format_int(r["users"]), None),
+        ("Events erreur (4xx/5xx)", format_int(r["errors"]), None),
     ])
     daily, _ = run_query(f"""
         SELECT event_dt, COUNT(*) AS events

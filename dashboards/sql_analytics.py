@@ -12,6 +12,8 @@ from dashboards.components import (
     pie_chart,
     plotly_figure,
     show_error,
+    format_int,
+    int_or_zero,
     _drop_blank_categories,
     _sanitize_chart_df,
 )
@@ -33,10 +35,10 @@ def render_query_performance(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        (f"Requêtes ({period_label()})", f"{int(r['queries']):,}", None),
-        ("Latence moy.", f"{int(r['avg_ms']):,} ms", None),
-        ("P95", f"{int(r['p95_ms']):,} ms", None),
-        ("Échecs", str(int(r["failed"])), None),
+        (f"Requêtes ({period_label()})", format_int(r["queries"]), None),
+        ("Latence moy.", format_int(r["avg_ms"], "ms"), None),
+        ("P95", format_int(r["p95_ms"], "ms"), None),
+        ("Échecs", format_int(r["failed"]), None),
     ])
     daily, _ = run_query(f"""
         SELECT CAST(start_time AS DATE) AS day,
@@ -142,9 +144,9 @@ def render_cache_spill(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        ("Total requêtes", str(int(r["total"])), None),
-        ("Servies par cache", str(int(r["cached"])), None),
-        ("Avec spill", str(int(r["spilled"])), None),
+        ("Total requêtes", format_int(r["total"]), None),
+        ("Servies par cache", format_int(r["cached"]), None),
+        ("Avec spill", format_int(r["spilled"]), None),
     ])
     ratio, _ = run_query(f"""
         SELECT CAST(start_time AS DATE) AS day,
