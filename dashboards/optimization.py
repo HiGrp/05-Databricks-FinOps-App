@@ -33,7 +33,7 @@ def render_ghost_clusters(run_query) -> None:
         return
     bar_chart(df, "cluster_id", "weekend_dbu", "DBU week-end par cluster", COLORS["danger"])
     joined, _ = run_query(f"""
-        SELECT c.cluster_name, c.autotermination_minutes, b.weekend_dbu
+        SELECT c.cluster_name, c.auto_termination_minutes, b.weekend_dbu
         FROM (
             SELECT cluster_id, SUM(usage_quantity) AS weekend_dbu
             FROM billing_usage_full
@@ -86,19 +86,19 @@ def render_spill_analysis(run_query) -> None:
 def render_autotermination(run_query) -> None:
     page_header("Autotermination", "Clusters sans auto-termination = risque de waste")
     df, err = run_query("""
-        SELECT cluster_name, autotermination_minutes, team, worker_count,
+        SELECT cluster_name, auto_termination_minutes, team, worker_count,
                driver_node_type, data_security_mode
         FROM compute_clusters_parsed
-        ORDER BY autotermination_minutes ASC, cluster_name
+        ORDER BY auto_termination_minutes ASC, cluster_name
     """)
     if show_error(err):
         return
     if df is not None and not df.empty:
-        at_risk = len(df[df["autotermination_minutes"] == 0])
+        at_risk = len(df[df["auto_termination_minutes"] == 0])
         metrics_row([
             ("Clusters total", str(len(df)), None),
             ("Sans auto-termination", str(at_risk), None),
-            ("Avec auto-term ≤20min", str(len(df[(df["autotermination_minutes"] > 0) & (df["autotermination_minutes"] <= 20)])), None),
+            ("Avec auto-term ≤20min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None),
         ])
     data_table(df)
 
