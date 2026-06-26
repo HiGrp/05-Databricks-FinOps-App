@@ -99,8 +99,8 @@ def render_task_breakdown(run_query) -> None:
     page_header("Breakdown tasks", "job_tasks — types et résultats")
     df, err = run_query(f"""
         SELECT task_type, result_state, COUNT(*) AS tasks
-        FROM job_tasks
-        WHERE {f_ts_date("start_time")}
+        FROM job_tasks_parsed
+        WHERE {f_ts_date("start_ts")}
         GROUP BY 1, 2 ORDER BY tasks DESC
     """)
     if show_error(err):

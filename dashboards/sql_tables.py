@@ -154,6 +154,17 @@ FROM {catalog}.lakeflow.job_run_timeline
 """
 
 
+def _job_tasks_parsed(catalog: str) -> str:
+    return f"""
+SELECT
+    *,
+    period_start_time AS start_ts,
+    period_end_time   AS end_ts,
+    task_key          AS task_type
+FROM {catalog}.lakeflow.job_task_run_timeline
+"""
+
+
 def _enriched_views(catalog: str) -> dict[str, str]:
     return {
         "billing_usage_full": _billing_usage_full(catalog),
@@ -162,6 +173,7 @@ def _enriched_views(catalog: str) -> dict[str, str]:
         "access_audit_parsed": _access_audit_parsed(catalog),
         "compute_clusters_parsed": _compute_clusters_parsed(catalog),
         "job_run_timeline_parsed": _job_run_timeline_parsed(catalog),
+        "job_tasks_parsed": _job_tasks_parsed(catalog),
     }
 
 
