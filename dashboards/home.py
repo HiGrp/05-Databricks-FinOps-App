@@ -9,6 +9,7 @@ from dashboards.components import (
     line_chart,
     page_header,
     pie_chart,
+    render_page_toolbar,
     show_empty,
     show_error,
     two_column_charts,
@@ -17,9 +18,10 @@ from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period
 
 
 def render_overview(run_query) -> None:
+    render_page_toolbar()
     page_header(
         "Overview",
-        f"FinOps, optimization, security, compute, jobs, and SQL in one place. Period: {period_label()}.",
+        "FinOps, optimization, security, compute, jobs, and SQL in one place.",
         category="Home",
         badge="Live",
         icon="📈",

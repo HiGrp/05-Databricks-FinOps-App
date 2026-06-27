@@ -15,8 +15,7 @@ from dashboards import (
     security,
     sql_analytics,
 )
-from dashboards.components import page_header, section_header
-from dashboards.date_filter import period_label
+from dashboards.components import page_header, render_page_toolbar, section_header
 
 
 def _render_section(title: str, subtitle: str, render_fn, run_query) -> None:
@@ -34,7 +33,8 @@ def _run_sections(
     *,
     summary_fn=None,
 ) -> None:
-    page_header(category, f"{description} — Period: {period_label()}.", category=category, icon=icon)
+    render_page_toolbar()
+    page_header(category, description, category=category, icon=icon)
 
     if summary_fn is not None:
         with st.spinner("Loading summary..."):

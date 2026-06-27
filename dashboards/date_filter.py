@@ -21,7 +21,7 @@ def init_dates() -> None:
 
 def render_date_filter(sidebar) -> None:
     init_dates()
-    sidebar.markdown("**Period**")
+    sidebar.markdown('<p class="filter-label">Period</p>', unsafe_allow_html=True)
     c1, c2 = sidebar.columns(2)
     with c1:
         st.session_state.filter_date_start = c1.date_input(
@@ -123,7 +123,7 @@ def render_workspace_filter(sidebar, run_query) -> None:
     if not trigrammes and not environnements:
         return
 
-    sidebar.markdown("**Workspace filters**")
+    sidebar.markdown('<p class="filter-label">Workspace</p>', unsafe_allow_html=True)
 
     selected_tri = sidebar.multiselect(
         "Trigramme",

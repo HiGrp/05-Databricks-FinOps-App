@@ -1,4 +1,4 @@
-"""Sidebar — filters, navigation, refresh."""
+"""Sidebar — filters and navigation."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import streamlit as st
 from dashboards.catalog_config import render_catalog_filter
 from dashboards.date_filter import render_date_filter, render_workspace_filter
 from dashboards.nav import CATEGORIES
-from dashboards.query_cache import bump_cache_epoch
 
 _LEGACY_NAV = {
     "Accueil": "Home",
@@ -36,21 +35,37 @@ def render_sidebar(run_query: Callable | None = None) -> str:
     _init_nav_state()
     sb = st.sidebar
 
-    sb.markdown("### Audit Databricks")
+    sb.markdown(
+        """
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-row">
+            <div class="brand-logo">A</div>
+            <div>
+              <div class="brand-title">Audit Databricks</div>
+              <div class="brand-sub">Workspace insights</div>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    render_date_filter(sb)
-    render_catalog_filter(sb)
+    with sb.container(border=True):
+        render_date_filter(sb)
+
+    with sb.container(border=True):
+        render_catalog_filter(sb)
 
     if run_query is not None:
-        render_workspace_filter(sb, run_query)
+        with sb.container(border=True):
+            render_workspace_filter(sb, run_query)
 
-    sb.divider()
-
-    sb.markdown('<p class="nav-section-label">Pages</p>', unsafe_allow_html=True)
+    sb.markdown('<p class="nav-section-label">Navigation</p>', unsafe_allow_html=True)
     for cat_name, cat in CATEGORIES.items():
         is_active = cat_name == st.session_state.nav_category
+        label = f"{cat['icon']}  {cat_name}"
         if sb.button(
-            f"{cat['icon']}  {cat_name}",
+            label,
             key=f"cat_{cat_name}",
             use_container_width=True,
             type="primary" if is_active else "secondary",
@@ -58,17 +73,5 @@ def render_sidebar(run_query: Callable | None = None) -> str:
         ):
             st.session_state.nav_category = cat_name
             st.rerun()
-
-    sb.divider()
-    sb.markdown('<p class="nav-section-label">Data</p>', unsafe_allow_html=True)
-
-    if sb.button("Refresh data", use_container_width=True, help="Clear cache and reload all queries."):
-        bump_cache_epoch()
-        st.cache_data.clear()
-        st.rerun()
-
-    epoch = st.session_state.get("data_cache_epoch", 0)
-    if epoch:
-        sb.caption(f"Cache cleared {epoch} time(s) this session.")
 
     return st.session_state.nav_category

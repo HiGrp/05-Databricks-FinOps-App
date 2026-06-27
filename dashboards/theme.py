@@ -1,20 +1,20 @@
-"""Design system & CSS global."""
+"""Design system & global CSS."""
 
 from __future__ import annotations
 
-# Palette inspirée Databricks / enterprise dark sidebar
 THEME = {
     "brand": "#FF3621",
-    "brand_dark": "#E02814",
-    "primary": "#2563EB",
-    "sidebar_bg": "#0B1120",
-    "sidebar_surface": "#151D2E",
-    "sidebar_border": "#1E293B",
-    "sidebar_text": "#E2E8F0",
-    "sidebar_muted": "#94A3B8",
-    "page_bg": "#F4F6FA",
+    "brand_soft": "#FFF1EE",
+    "primary": "#4338CA",
+    "primary_soft": "#EEF2FF",
+    "sidebar_bg": "#FFFFFF",
+    "sidebar_surface": "#F8FAFC",
+    "sidebar_border": "#E2E8F0",
+    "sidebar_text": "#0F172A",
+    "sidebar_muted": "#64748B",
+    "page_bg": "#F1F5F9",
     "card_bg": "#FFFFFF",
-    "card_border": "#E8ECF4",
+    "card_border": "#E2E8F0",
     "text": "#0F172A",
     "text_muted": "#64748B",
     "success": "#059669",
@@ -26,14 +26,14 @@ PLOTLY_TEMPLATE = {
     "layout": {
         "paper_bgcolor": "rgba(0,0,0,0)",
         "plot_bgcolor": "rgba(0,0,0,0)",
-        "font": {"family": "Inter, system-ui, sans-serif", "color": "#334155", "size": 12},
-        "title": {"font": {"size": 15, "color": "#0F172A"}, "x": 0, "xanchor": "left"},
-        "margin": {"l": 40, "r": 24, "t": 48, "b": 40},
-        "colorway": ["#2563EB", "#FF3621", "#059669", "#7C3AED", "#D97706", "#0891B2", "#DB2777"],
+        "font": {"family": "Inter, system-ui, sans-serif", "color": "#475569", "size": 12},
+        "title": {"font": {"size": 14, "color": "#0F172A"}, "x": 0, "xanchor": "left"},
+        "margin": {"l": 36, "r": 20, "t": 40, "b": 36},
+        "colorway": ["#4338CA", "#FF3621", "#0891B2", "#059669", "#7C3AED", "#D97706", "#DB2777"],
         "legend": {"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
-        "xaxis": {"gridcolor": "#EEF2F7", "linecolor": "#CBD5E1", "zerolinecolor": "#EEF2F7"},
-        "yaxis": {"gridcolor": "#EEF2F7", "linecolor": "#CBD5E1", "zerolinecolor": "#EEF2F7"},
-        "hoverlabel": {"bgcolor": "#0F172A", "font": {"color": "#F8FAFC"}},
+        "xaxis": {"gridcolor": "#F1F5F9", "linecolor": "#E2E8F0", "zerolinecolor": "#F1F5F9"},
+        "yaxis": {"gridcolor": "#F1F5F9", "linecolor": "#E2E8F0", "zerolinecolor": "#F1F5F9"},
+        "hoverlabel": {"bgcolor": "#0F172A", "font": {"color": "#F8FAFC", "size": 12}},
     }
 }
 
@@ -51,276 +51,317 @@ def inject_theme() -> None:
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }}
 
+        #MainMenu, footer, header[data-testid="stHeader"] {{
+            visibility: hidden;
+            height: 0;
+            min-height: 0;
+        }}
+
         .stApp {{
             background: {t["page_bg"]};
         }}
 
-        /* ── Sidebar ── */
+        /* ── Sidebar layout ── */
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, {t["sidebar_bg"]} 0%, #0F172A 100%);
+            background: {t["sidebar_bg"]} !important;
             border-right: 1px solid {t["sidebar_border"]};
+            box-shadow: 1px 0 0 rgba(15, 23, 42, 0.04);
         }}
-        [data-testid="stSidebar"] * {{
+        [data-testid="stSidebar"] > div:first-child {{
+            padding-top: 0.65rem !important;
+        }}
+        [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+            padding-top: 0.25rem !important;
+        }}
+        [data-testid="stSidebar"] [data-testid="block-container"] {{
+            padding-top: 0.5rem !important;
+            padding-bottom: 1rem !important;
+        }}
+        [data-testid="stSidebar"] hr {{
+            border: none;
+            border-top: 1px solid {t["sidebar_border"]};
+            margin: 0.85rem 0 !important;
+            opacity: 1;
+        }}
+
+        /* ── Sidebar brand ── */
+        .sidebar-brand {{
+            padding: 0.15rem 0 0.85rem 0;
+            margin-bottom: 0.15rem;
+            border-bottom: 1px solid {t["sidebar_border"]};
+        }}
+        .sidebar-brand-row {{
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }}
+        .brand-logo {{
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, {t["brand"]}, #E02814);
+            border-radius: 9px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(255, 54, 33, 0.28);
+        }}
+        .brand-title {{
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: {t["sidebar_text"]} !important;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }}
+        .brand-sub {{
+            font-size: 0.72rem;
+            color: {t["sidebar_muted"]} !important;
+            margin-top: 1px;
+            font-weight: 500;
+        }}
+
+        /* ── Sidebar filters ── */
+        .filter-label, .nav-section-label {{
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: {t["sidebar_muted"]} !important;
+            margin: 0 0 0.4rem 0;
+            padding: 0;
+        }}
+        [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
+            background: {t["sidebar_surface"]} !important;
+            border-color: {t["sidebar_border"]} !important;
+            border-radius: 10px !important;
+            padding: 0.55rem 0.65rem !important;
+            margin-bottom: 0.45rem;
+        }}
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {{
             color: {t["sidebar_text"]} !important;
         }}
         [data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] small {{
             color: {t["sidebar_muted"]} !important;
         }}
-        [data-testid="stSidebar"] input, [data-testid="stSidebar"] textarea {{
-            background: {t["sidebar_surface"]} !important;
-            border: 1px solid {t["sidebar_border"]} !important;
-            color: {t["sidebar_text"]} !important;
-            border-radius: 10px !important;
-        }}
-        [data-testid="stSidebar"] [data-baseweb="select"] > div {{
-            background: {t["sidebar_surface"]} !important;
-            border-color: {t["sidebar_border"]} !important;
-            border-radius: 10px !important;
-        }}
-        [data-testid="stSidebar"] hr {{
-            border-color: {t["sidebar_border"]} !important;
-            opacity: 0.6;
-        }}
-        [data-testid="stSidebar"] .stRadio label {{
-            background: transparent;
-            padding: 0.45rem 0.65rem;
-            border-radius: 8px;
-            margin: 2px 0;
-            transition: background 0.15s;
-        }}
-        [data-testid="stSidebar"] .stRadio label:hover {{
-            background: {t["sidebar_surface"]};
-        }}
-        [data-testid="stSidebar"] .stRadio > div {{
-            gap: 0.25rem;
-        }}
-        [data-testid="stSidebar"] .stButton > button {{
-            background: {t["sidebar_surface"]} !important;
+        [data-testid="stSidebar"] input {{
+            background: {t["sidebar_bg"]} !important;
             border: 1px solid {t["sidebar_border"]} !important;
             color: {t["sidebar_text"]} !important;
             border-radius: 8px !important;
-            font-weight: 500 !important;
             font-size: 0.82rem !important;
-            padding: 0.45rem 0.75rem !important;
+        }}
+        [data-testid="stSidebar"] [data-baseweb="select"] > div,
+        [data-testid="stSidebar"] [data-baseweb="input"] {{
+            background: {t["sidebar_bg"]} !important;
+            border-color: {t["sidebar_border"]} !important;
+            border-radius: 8px !important;
+        }}
+        [data-testid="stSidebar"] [data-baseweb="tag"] {{
+            background: {t["primary_soft"]} !important;
+            color: {t["primary"]} !important;
+        }}
+
+        /* ── Sidebar navigation ── */
+        [data-testid="stSidebar"] .stButton {{
+            margin-bottom: 0.2rem;
+        }}
+        [data-testid="stSidebar"] .stButton > button {{
+            width: 100%;
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            color: {t["sidebar_muted"]} !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            font-size: 0.84rem !important;
+            padding: 0.5rem 0.65rem !important;
             text-align: left !important;
             justify-content: flex-start !important;
+            box-shadow: none !important;
+            transition: all 0.15s ease;
         }}
         [data-testid="stSidebar"] .stButton > button:hover:not(:disabled) {{
-            border-color: {t["brand"]} !important;
-            background: #1a2332 !important;
+            background: {t["sidebar_surface"]} !important;
+            color: {t["sidebar_text"]} !important;
+            border-color: {t["sidebar_border"]} !important;
         }}
         [data-testid="stSidebar"] .stButton > button[kind="primary"] {{
-            background: linear-gradient(135deg, {t["brand"]}, {t["brand_dark"]}) !important;
-            border: none !important;
-            color: white !important;
+            background: {t["sidebar_surface"]} !important;
+            border: 1px solid {t["sidebar_border"]} !important;
+            border-left: 3px solid {t["brand"]} !important;
+            color: {t["sidebar_text"]} !important;
             font-weight: 600 !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
         }}
         [data-testid="stSidebar"] .stButton > button:disabled {{
             opacity: 1 !important;
             cursor: default !important;
         }}
 
-        /* ── Main area ── */
-        .block-container {{
-            padding-top: 2.5rem;
-            max-width: 1400px;
+        /* ── Main layout ── */
+        section.main [data-testid="block-container"] {{
+            padding-top: 1.25rem !important;
+            padding-bottom: 2rem !important;
+            max-width: 1320px;
         }}
-
-        /* En-têtes de page — évite le texte coupé en haut */
         section.main [data-testid="stVerticalBlockBorderWrapper"] {{
-            padding-top: 1rem !important;
-            padding-bottom: 0.75rem !important;
+            background: {t["card_bg"]};
+            border: 1px solid {t["card_border"]} !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            padding: 0.85rem 1rem !important;
             overflow: visible !important;
         }}
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMarkdownContainer"]:first-child p {{
-            margin-top: 0.25rem !important;
-            margin-bottom: 0.5rem !important;
-            line-height: 1.5 !important;
-            color: {t["text_muted"]};
-            font-size: 0.9rem;
-        }}
-        section.main [data-testid="stCaptionContainer"] {{
-            padding-top: 0.15rem;
-            overflow: visible !important;
+        section.main hr {{
+            border: none;
+            border-top: 1px solid {t["card_border"]};
+            margin: 1.25rem 0 !important;
         }}
 
-        /* ── Brand header sidebar ── */
-        .brand-block {{
-            padding: 0.25rem 0 1rem 0;
+        /* ── Page toolbar ── */
+        .page-toolbar-wrap {{
+            background: {t["card_bg"]};
+            border: 1px solid {t["card_border"]};
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }}
-        .brand-logo {{
-            display: inline-flex;
+        .page-toolbar-meta {{
+            display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, {t["brand"]}, {t["brand_dark"]});
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: white !important;
-            margin-right: 10px;
-            box-shadow: 0 4px 14px rgba(255,54,33,0.35);
+            gap: 0.5rem 1rem;
+            min-height: 2.4rem;
         }}
-        .brand-title {{
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #F8FAFC !important;
-            line-height: 1.2;
+        .toolbar-period {{
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: {t["text"]};
         }}
-        .brand-sub {{
-            font-size: 0.72rem;
-            color: {t["sidebar_muted"]} !important;
-            margin-top: 2px;
+        .toolbar-cache {{
+            font-size: 0.75rem;
+            color: {t["text_muted"]};
+            background: {t["sidebar_surface"]};
+            border: 1px solid {t["card_border"]};
+            border-radius: 999px;
+            padding: 0.15rem 0.55rem;
+        }}
+        section.main [data-testid="block-container"] > div > div:first-child [data-testid="column"]:last-child .stButton > button {{
+            background: {t["card_bg"]} !important;
+            border: 1px solid {t["card_border"]} !important;
+            color: {t["text"]} !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            font-size: 0.82rem !important;
+            min-height: 2.4rem !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+        }}
+        section.main [data-testid="block-container"] > div > div:first-child [data-testid="column"]:last-child .stButton > button:hover {{
+            border-color: {t["primary"]} !important;
+            color: {t["primary"]} !important;
+            background: {t["primary_soft"]} !important;
         }}
 
-        /* ── Page header ── */
+        /* ── Page hero ── */
         .page-hero {{
             background: {t["card_bg"]};
             border: 1px solid {t["card_border"]};
-            border-radius: 16px;
-            padding: 1.35rem 1.5rem;
-            margin-bottom: 1.25rem;
-            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+            border-radius: 14px;
+            padding: 1.1rem 1.25rem;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }}
-        .breadcrumb {{
-            font-size: 0.78rem;
+        .page-hero-breadcrumb {{
+            font-size: 0.75rem;
+            font-weight: 500;
             color: {t["text_muted"]};
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
         }}
-        .breadcrumb span {{ color: {t["primary"]}; font-weight: 500; }}
-        .page-title {{
-            font-size: 1.65rem;
+        .page-hero-breadcrumb span {{
+            color: {t["primary"]};
+            font-weight: 600;
+        }}
+        .page-hero-title {{
+            font-size: 1.45rem;
             font-weight: 700;
             color: {t["text"]};
             margin: 0;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
         }}
-        .page-subtitle {{
-            font-size: 0.92rem;
+        .page-hero-sub {{
+            font-size: 0.88rem;
             color: {t["text_muted"]};
             margin: 0.35rem 0 0 0;
+            line-height: 1.45;
         }}
-        .page-badge {{
+        .page-hero-badge {{
             display: inline-block;
-            background: #EEF2FF;
-            color: #4338CA;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 0.2rem 0.65rem;
-            border-radius: 999px;
-            margin-left: 0.5rem;
-            vertical-align: middle;
-        }}
-
-        /* ── KPI cards ── */
-        .kpi-grid {{
-            display: grid;
-            gap: 0.85rem;
-            margin-bottom: 1rem;
-        }}
-        .kpi-card {{
-            background: {t["card_bg"]};
-            border: 1px solid {t["card_border"]};
-            border-radius: 14px;
-            padding: 1rem 1.1rem;
-            box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-            height: 100%;
-        }}
-        .kpi-card:hover {{
-            box-shadow: 0 4px 12px rgba(15,23,42,0.06);
-            border-color: #D5DCE8;
-        }}
-        .kpi-icon {{
-            font-size: 1.25rem;
-            margin-bottom: 0.35rem;
-        }}
-        .kpi-label {{
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: {t["text_muted"]};
-        }}
-        .kpi-value {{
-            font-size: 1.55rem;
-            font-weight: 700;
-            color: {t["text"]};
-            margin: 0.2rem 0;
-            letter-spacing: -0.02em;
-        }}
-        .kpi-delta {{
-            font-size: 0.78rem;
-            font-weight: 500;
-        }}
-        .kpi-delta.up {{ color: {t["danger"]}; }}
-        .kpi-delta.down {{ color: {t["success"]}; }}
-        .kpi-delta.neutral {{ color: {t["text_muted"]}; }}
-
-        /* ── Chart cards ── */
-        .section-card {{
-            background: {t["card_bg"]};
-            border: 1px solid {t["card_border"]};
-            border-radius: 16px;
-            padding: 0.25rem 0.5rem 0.5rem 0.5rem;
-            margin-bottom: 0.85rem;
-            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-        }}
-        .section-title {{
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: {t["text"]};
-            padding: 0.85rem 1rem 0.25rem 1rem;
-        }}
-
-        /* ── Status pill sidebar ── */
-        .status-pill {{
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: {t["sidebar_surface"]};
-            border: 1px solid {t["sidebar_border"]};
-            border-radius: 999px;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }}
-        .status-dot {{
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: #34D399;
-            box-shadow: 0 0 6px rgba(52,211,153,0.6);
-        }}
-        .status-dot.remote {{ background: #60A5FA; box-shadow: 0 0 6px rgba(96,165,250,0.6); }}
-
-        .nav-section-label {{
+            background: {t["brand_soft"]};
+            color: {t["brand"]};
             font-size: 0.68rem;
             font-weight: 700;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            margin-left: 0.45rem;
+            vertical-align: middle;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: {t["sidebar_muted"]} !important;
-            margin: 0.75rem 0 0.35rem 0;
+            letter-spacing: 0.04em;
         }}
 
-        /* Streamlit metric override in main */
+        /* ── Section headers ── */
+        .section-head {{
+            border-left: 3px solid {t["primary"]};
+            padding: 0.15rem 0 0.15rem 0.75rem;
+            margin: 0.15rem 0 0.65rem 0;
+        }}
+        .section-head-title {{
+            font-size: 1rem;
+            font-weight: 700;
+            color: {t["text"]};
+            margin: 0;
+            letter-spacing: -0.01em;
+        }}
+        .section-head-hint {{
+            font-size: 0.8rem;
+            color: {t["text_muted"]};
+            margin: 0.2rem 0 0 0;
+        }}
+
+        /* ── Metrics & charts ── */
+        [data-testid="stMetric"] {{
+            background: {t["sidebar_surface"]};
+            border: 1px solid {t["card_border"]};
+            border-radius: 10px;
+            padding: 0.65rem 0.75rem !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            font-size: 0.72rem !important;
+            font-weight: 600 !important;
+            color: {t["text_muted"]} !important;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }}
         [data-testid="stMetricValue"] {{
-            font-size: 1.4rem !important;
+            font-size: 1.35rem !important;
             font-weight: 700 !important;
+            color: {t["text"]} !important;
         }}
 
-        div[data-testid="stAlert"] {{
-            border-radius: 12px;
-        }}
-
-        /* Chart title + hover help */
         .chart-title-row {{
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.35rem;
+            gap: 0.45rem;
+            margin-bottom: 0.25rem;
         }}
         .chart-title-text {{
             color: {t["text"]};
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            font-weight: 600;
         }}
         .chart-info-tip {{
             position: relative;
@@ -333,18 +374,19 @@ def inject_theme() -> None:
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 1.15rem;
-            height: 1.15rem;
+            width: 1.1rem;
+            height: 1.1rem;
             border-radius: 50%;
-            background: {t["card_border"]};
+            background: {t["sidebar_surface"]};
+            border: 1px solid {t["card_border"]};
             color: {t["text_muted"]};
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            line-height: 1;
         }}
         .chart-info-tip:hover .chart-info-icon,
         .chart-info-tip:focus .chart-info-icon {{
             background: {t["primary"]};
+            border-color: {t["primary"]};
             color: white;
         }}
         .chart-info-popup {{
@@ -354,15 +396,14 @@ def inject_theme() -> None:
             left: 50%;
             bottom: calc(100% + 8px);
             transform: translateX(-50%);
-            width: min(280px, 70vw);
-            padding: 0.55rem 0.75rem;
+            width: min(260px, 70vw);
+            padding: 0.5rem 0.7rem;
             background: {t["text"]};
             color: #F8FAFC;
-            font-size: 0.78rem;
-            font-weight: 400;
-            line-height: 1.45;
+            font-size: 0.76rem;
+            line-height: 1.4;
             border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(15,23,42,0.18);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
             z-index: 1000;
             pointer-events: none;
             transition: opacity 0.15s ease;
@@ -373,7 +414,7 @@ def inject_theme() -> None:
             top: 100%;
             left: 50%;
             transform: translateX(-50%);
-            border: 6px solid transparent;
+            border: 5px solid transparent;
             border-top-color: {t["text"]};
         }}
         .chart-info-tip:hover .chart-info-popup,
@@ -382,34 +423,28 @@ def inject_theme() -> None:
             opacity: 1;
         }}
 
-        /* Mobile — stack KPI metrics */
+        div[data-testid="stAlert"] {{
+            border-radius: 10px;
+            border: 1px solid {t["card_border"]};
+        }}
+
         @media (max-width: 768px) {{
-            [data-testid="stSidebar"] {{
-                min-width: 100% !important;
+            section.main [data-testid="block-container"] {{
+                padding-top: 0.75rem !important;
             }}
             div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {{
                 flex-wrap: wrap !important;
-                gap: 0.5rem !important;
+                gap: 0.45rem !important;
             }}
             div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) > div[data-testid="column"] {{
                 flex: 1 1 45% !important;
                 min-width: 45% !important;
-                width: 45% !important;
-            }}
-            [data-testid="stMetricValue"] {{
-                font-size: 1.15rem !important;
-            }}
-            .chart-info-popup {{
-                width: min(240px, 85vw);
-                left: 0;
-                transform: none;
             }}
         }}
         @media (max-width: 480px) {{
             div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) > div[data-testid="column"] {{
                 flex: 1 1 100% !important;
                 min-width: 100% !important;
-                width: 100% !important;
             }}
         }}
         </style>

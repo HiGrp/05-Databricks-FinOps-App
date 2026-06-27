@@ -72,15 +72,15 @@ def _apply_plotly_theme(fig: go.Figure) -> go.Figure:
         hovermode="closest",
     )
     fig.update_xaxes(
-        gridcolor="#EEF2F7",
-        linecolor="#CBD5E1",
-        zerolinecolor="#EEF2F7",
+        gridcolor="#F1F5F9",
+        linecolor="#E2E8F0",
+        zerolinecolor="#F1F5F9",
         title_text="",
     )
     fig.update_yaxes(
-        gridcolor="#EEF2F7",
-        linecolor="#CBD5E1",
-        zerolinecolor="#EEF2F7",
+        gridcolor="#F1F5F9",
+        linecolor="#E2E8F0",
+        zerolinecolor="#F1F5F9",
         title_text="",
     )
     _fix_plotly_traces(fig)
@@ -131,23 +131,66 @@ def page_header(
     if subtitle == "":
         subtitle = st.session_state.get("nav_desc") or ""
 
-    with st.container(border=True):
-        if category:
-            st.markdown(f"**{category}** › {title}")
-        heading = f"{icon} {title}".strip() if icon else title
-        st.markdown(f"## {heading}")
-        if badge:
-            st.caption(badge)
-        if subtitle:
-            st.caption(subtitle)
+    heading = f"{icon} {title}".strip() if icon else title
+    badge_html = (
+        f'<span class="page-hero-badge">{html.escape(badge)}</span>' if badge else ""
+    )
+    breadcrumb = (
+        f'<div class="page-hero-breadcrumb"><span>{html.escape(category)}</span></div>'
+        if category else ""
+    )
+    sub_html = (
+        f'<p class="page-hero-sub">{html.escape(subtitle)}</p>' if subtitle else ""
+    )
+    st.markdown(
+        f'<div class="page-hero">{breadcrumb}'
+        f'<h1 class="page-hero-title">{html.escape(heading)}{badge_html}</h1>'
+        f"{sub_html}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_page_toolbar() -> None:
+    """Period + refresh control at the top of each category page."""
+    from dashboards.date_filter import period_label
+    from dashboards.query_cache import bump_cache_epoch
+
+    category = st.session_state.get("nav_category", "Home")
+    epoch = st.session_state.get("data_cache_epoch", 0)
+    cache_note = f" · cleared {epoch}×" if epoch else ""
+
+    col_meta, col_btn = st.columns([5, 1])
+    with col_meta:
+        st.markdown(
+            f'<div class="page-toolbar-wrap"><div class="page-toolbar-meta">'
+            f'<span class="toolbar-period">{html.escape(period_label())}</span>'
+            f'<span class="toolbar-cache">Cache 5 min{html.escape(cache_note)}</span>'
+            f"</div></div>",
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        st.markdown('<div style="height:0.35rem"></div>', unsafe_allow_html=True)
+        if st.button(
+            "↻ Refresh",
+            key=f"refresh_{category}",
+            help="Clear cache and reload all charts.",
+            use_container_width=True,
+        ):
+            bump_cache_epoch()
+            st.cache_data.clear()
+            st.rerun()
 
 
 def section_header(title: str, hint: str | None = None) -> None:
-    if hint:
-        st.markdown(f"#### {title}")
-        st.caption(hint)
-    else:
-        st.markdown(f"#### {title}")
+    hint_html = (
+        f'<p class="section-head-hint">{html.escape(hint)}</p>' if hint else ""
+    )
+    st.markdown(
+        f'<div class="section-head">'
+        f'<p class="section-head-title">{html.escape(title)}</p>'
+        f"{hint_html}</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def show_error(err: str | None) -> bool:

@@ -36,7 +36,7 @@ def render_catalog_filter(sidebar) -> None:
     if "system_catalog" not in st.session_state:
         st.session_state.system_catalog = DEFAULT_CATALOG
 
-    sidebar.markdown("**System tables catalog**")
+    sidebar.markdown('<p class="filter-label">System catalog</p>', unsafe_allow_html=True)
     previous = st.session_state.system_catalog
     value = sidebar.text_input(
         "Catalog",
