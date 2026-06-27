@@ -116,6 +116,14 @@ def _drop_blank_categories(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
     return out
 
 
+def _refresh_page_data() -> None:
+    from dashboards.query_cache import bump_cache_epoch
+
+    bump_cache_epoch()
+    st.cache_data.clear()
+    st.rerun()
+
+
 def page_header(
     title: str,
     subtitle: str,
@@ -126,6 +134,9 @@ def page_header(
 ) -> None:
     if st.session_state.get("_suppress_page_header"):
         return
+
+    from dashboards.date_filter import period_display
+
     category = category or st.session_state.get("nav_category") or ""
     icon = icon or st.session_state.get("nav_icon") or ""
     if subtitle == "":
@@ -142,42 +153,33 @@ def page_header(
     sub_html = (
         f'<p class="page-hero-sub">{html.escape(subtitle)}</p>' if subtitle else ""
     )
-    st.markdown(
-        f'<div class="page-hero">{breadcrumb}'
-        f'<h1 class="page-hero-title">{html.escape(heading)}{badge_html}</h1>'
-        f"{sub_html}</div>",
-        unsafe_allow_html=True,
-    )
+    period = html.escape(period_display())
 
-
-def render_page_toolbar() -> None:
-    """Period + refresh control at the top of each category page."""
-    from dashboards.date_filter import period_label
-    from dashboards.query_cache import bump_cache_epoch
-
-    category = st.session_state.get("nav_category", "Home")
-    epoch = st.session_state.get("data_cache_epoch", 0)
-    cache_note = f" · cleared {epoch}×" if epoch else ""
-
-    col_meta, col_btn = st.columns([5, 1])
-    with col_meta:
+    col_main, col_btn = st.columns([11, 1], gap="small", vertical_alignment="top")
+    with col_main:
         st.markdown(
-            f'<div class="page-toolbar-wrap"><div class="page-toolbar-meta">'
-            f'<span class="toolbar-period">{html.escape(period_label())}</span>'
-            f'<span class="toolbar-cache">Cache 5 min{html.escape(cache_note)}</span>'
+            f'<div class="page-hero">{breadcrumb}'
+            f'<h1 class="page-hero-title">{html.escape(heading)}{badge_html}</h1>'
+            f"{sub_html}"
+            f'<div class="page-hero-meta">'
+            f'<span class="page-context-pill">📅 {period}</span>'
+            f'<span class="page-context-hint">Change dates in the sidebar</span>'
             f"</div></div>",
             unsafe_allow_html=True,
         )
     with col_btn:
         if st.button(
-            "↻ Refresh",
+            "↻",
             key=f"refresh_{category}",
-            help="Clear cache and reload all charts.",
+            help="Reload all data (clears the 5-minute cache).",
             use_container_width=True,
         ):
-            bump_cache_epoch()
-            st.cache_data.clear()
-            st.rerun()
+            _refresh_page_data()
+
+
+def render_page_toolbar() -> None:
+    """Deprecated — context is shown inside page_header()."""
+    return
 
 
 def section_header(title: str, hint: str | None = None) -> None:

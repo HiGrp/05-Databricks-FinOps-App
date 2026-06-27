@@ -59,9 +59,27 @@ def f_event_date(col: str = "event_dt") -> str:
     return f"{col} >= '{s}' AND {col} <= '{e}'"
 
 
+def _fmt(d: date) -> str:
+    return d.strftime("%b %d, %Y")
+
+
+def period_display() -> str:
+    """Human-readable period for page headers."""
+    init_dates()
+    start = st.session_state.filter_date_start
+    end = st.session_state.filter_date_end
+    if start == end:
+        return _fmt(start)
+    if start.year == end.year:
+        if start.month == end.month:
+            return f"{start.strftime('%b %d')} – {end.strftime('%d, %Y')}"
+        return f"{start.strftime('%b %d')} – {_fmt(end)}"
+    return f"{_fmt(start)} – {_fmt(end)}"
+
+
 def period_label() -> str:
-    s, e = _bounds()
-    return f"{s} → {e}"
+    """Short period hint for KPI footnotes."""
+    return period_display()
 
 
 def f_ts_date(col: str) -> str:

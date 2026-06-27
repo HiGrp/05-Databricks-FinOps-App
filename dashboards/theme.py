@@ -253,46 +253,19 @@ def inject_theme() -> None:
             margin: 0.85rem 0 !important;
         }}
 
-        /* ── Page toolbar ── */
-        .page-toolbar-wrap {{
-            background: {t["card_bg"]};
-            border: 1px solid {t["card_border"]};
-            border-radius: 10px;
-            padding: 0.55rem 0.75rem;
-            margin: 0;
-            box-shadow: none;
-        }}
-        .page-toolbar-meta {{
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.5rem 1rem;
-            min-height: 2.4rem;
-        }}
-        .toolbar-period {{
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: {t["text"]};
-        }}
-        .toolbar-cache {{
-            font-size: 0.75rem;
-            color: {t["text_muted"]};
-            background: {t["sidebar_surface"]};
-            border: 1px solid {t["card_border"]};
-            border-radius: 999px;
-            padding: 0.15rem 0.55rem;
-        }}
-        section.main [data-testid="block-container"] > div > div:first-child [data-testid="column"]:last-child .stButton > button {{
+        /* ── Page header refresh ── */
+        section.main div[data-testid="stHorizontalBlock"]:has(.page-hero) [data-testid="column"]:last-child .stButton > button {{
             background: {t["card_bg"]} !important;
             border: 1px solid {t["card_border"]} !important;
-            color: {t["text"]} !important;
+            color: {t["text_muted"]} !important;
             border-radius: 8px !important;
-            font-weight: 600 !important;
-            font-size: 0.82rem !important;
-            min-height: 2.4rem !important;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+            font-weight: 700 !important;
+            font-size: 1.05rem !important;
+            min-height: 2.35rem !important;
+            margin-top: 0.35rem !important;
+            box-shadow: none !important;
         }}
-        section.main [data-testid="block-container"] > div > div:first-child [data-testid="column"]:last-child .stButton > button:hover {{
+        section.main div[data-testid="stHorizontalBlock"]:has(.page-hero) [data-testid="column"]:last-child .stButton > button:hover {{
             border-color: {t["primary"]} !important;
             color: {t["primary"]} !important;
             background: {t["primary_soft"]} !important;
@@ -330,6 +303,28 @@ def inject_theme() -> None:
             color: {t["text_muted"]};
             margin: 0.35rem 0 0 0;
             line-height: 1.45;
+        }}
+        .page-hero-meta {{
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem 0.75rem;
+            margin-top: 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid {t["card_border"]};
+        }}
+        .page-context-pill {{
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: {t["text"]};
+            background: {t["sidebar_surface"]};
+            border: 1px solid {t["card_border"]};
+            border-radius: 999px;
+            padding: 0.2rem 0.65rem;
+        }}
+        .page-context-hint {{
+            font-size: 0.75rem;
+            color: {t["text_muted"]};
         }}
         .page-hero-badge {{
             display: inline-block;

@@ -15,7 +15,7 @@ from dashboards import (
     security,
     sql_analytics,
 )
-from dashboards.components import page_header, render_page_toolbar, section_header
+from dashboards.components import page_header, section_header
 
 
 def _render_section(title: str, subtitle: str, render_fn, run_query) -> None:
@@ -33,7 +33,6 @@ def _run_sections(
     *,
     summary_fn=None,
 ) -> None:
-    render_page_toolbar()
     page_header(category, description, category=category, icon=icon)
 
     if summary_fn is not None:
