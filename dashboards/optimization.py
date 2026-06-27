@@ -1,26 +1,26 @@
-"""Dashboards optimisation."""
+"""Optimization dashboards."""
 
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
+from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     data_table,
-    line_chart,
     metrics_row,
     page_header,
     plotly_figure,
-    show_empty,
     show_error,
     COLORS,
     _drop_blank_categories,
     _sanitize_chart_df,
 )
-from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, f_workspace, period_label
+from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period_label
 
 
 def render_ghost_clusters(run_query) -> None:
-    page_header("Ghost Clusters", "Clusters actifs le week-end — gaspillage probable")
+    page_header("Weekend clusters", "Clusters active on Sat/Sun — likely waste")
     df, err = run_query(f"""
         SELECT cluster_id, SUM(usage_quantity) AS weekend_dbu
         FROM billing_usage_full
@@ -31,7 +31,7 @@ def render_ghost_clusters(run_query) -> None:
     """)
     if show_error(err):
         return
-    bar_chart(df, "cluster_id", "weekend_dbu", "DBU week-end par cluster", COLORS["danger"])
+    bar_chart(df, "cluster_id", "weekend_dbu", "Weekend DBU by cluster", COLORS["danger"], help=HELP["weekend_cluster_dbu"])
     joined, _ = run_query(f"""
         SELECT c.cluster_name, c.auto_termination_minutes, b.weekend_dbu
         FROM (
@@ -49,10 +49,10 @@ def render_ghost_clusters(run_query) -> None:
 
 
 def render_wall_of_shame(run_query) -> None:
-    page_header("Wall of Shame SQL", "Requêtes les plus coûteuses")
+    page_header("Slow SQL", "Most expensive queries by duration")
     df, err = run_query(f"""
         SELECT executed_by, duration_ms, read_bytes, spilled_local_bytes,
-               LEFT(COALESCE(statement_text, '(sans texte)'), 120) AS query_preview
+               LEFT(COALESCE(statement_text, '(no text)'), 120) AS query_preview
         FROM query_history
         WHERE execution_status = 'FINISHED'
           AND {f_ts_date("start_time")}
@@ -64,10 +64,10 @@ def render_wall_of_shame(run_query) -> None:
 
 
 def render_spill_analysis(run_query) -> None:
-    page_header("Spill & mémoire", "Requêtes avec spill disque élevé")
+    page_header("Spill", "Queries with high disk spill")
     df, err = run_query(f"""
         SELECT executed_by, spilled_local_bytes, read_bytes, total_duration_ms AS duration_ms,
-               LEFT(COALESCE(statement_text, '(sans texte)'), 100) AS query_preview
+               LEFT(COALESCE(statement_text, '(no text)'), 100) AS query_preview
         FROM query_history_full
         WHERE spilled_local_bytes > 1000000000
           AND {f_ts_date("start_time")}
@@ -79,12 +79,12 @@ def render_spill_analysis(run_query) -> None:
         df = df.copy()
         df["spill_gb"] = df["spilled_local_bytes"] / 1e9
         df["query_label"] = df["query_preview"].astype(str).str.slice(0, 45)
-        bar_chart(df.head(15), "query_label", "spill_gb", "Spill (GB) — top requêtes", orientation="h")
+        bar_chart(df.head(15), "query_label", "spill_gb", "Top spill (GB)", orientation="h", help=HELP["query_spill"])
     data_table(df)
 
 
 def render_autotermination(run_query) -> None:
-    page_header("Autotermination", "Clusters sans auto-termination = risque de waste")
+    page_header("Auto-stop", "Clusters without auto-termination may waste money")
     df, err = run_query("""
         SELECT cluster_name, auto_termination_minutes, team, worker_count,
                driver_node_type, data_security_mode
@@ -96,15 +96,15 @@ def render_autotermination(run_query) -> None:
     if df is not None and not df.empty:
         at_risk = len(df[df["auto_termination_minutes"] == 0])
         metrics_row([
-            ("Clusters total", str(len(df)), None),
-            ("Sans auto-termination", str(at_risk), None),
-            ("Avec auto-term ≤20min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None),
+            ("Total clusters", str(len(df)), None),
+            ("No auto-stop", str(at_risk), None),
+            ("Auto-stop ≤20 min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None),
         ])
     data_table(df)
 
 
 def render_node_utilization(run_query) -> None:
-    page_header("Utilisation nodes", "CPU / mémoire par instance (node_timeline)")
+    page_header("Node usage", "CPU and memory per cluster")
     df, err = run_query("""
         SELECT cluster_id,
                ROUND(AVG(cpu_user_percent + cpu_system_percent), 1) AS avg_cpu,
@@ -117,13 +117,13 @@ def render_node_utilization(run_query) -> None:
         return
     c1, c2 = st.columns(2)
     with c1:
-        bar_chart(df, "cluster_id", "avg_cpu", "CPU moyen (%)", orientation="h")
+        bar_chart(df, "cluster_id", "avg_cpu", "Avg CPU (%)", orientation="h", help=HELP["avg_cpu"])
     with c2:
-        bar_chart(df, "cluster_id", "avg_mem", "Mémoire moyenne (%)", COLORS["warning"], orientation="h")
+        bar_chart(df, "cluster_id", "avg_mem", "Avg memory (%)", COLORS["warning"], orientation="h", help=HELP["avg_memory"])
 
 
 def render_job_failures(run_query) -> None:
-    page_header("Échecs jobs & SLA", "Runs FAILED / TIMEDOUT — impact fiabilité")
+    page_header("Failed jobs", "FAILED / TIMEDOUT / CANCELED runs")
     df, err = run_query(f"""
         SELECT job_name, result_state, COUNT(*) AS runs
         FROM job_run_timeline_parsed
@@ -139,12 +139,12 @@ def render_job_failures(run_query) -> None:
           AND {f_ts_date("start_ts")}
         GROUP BY 1 ORDER BY failures DESC LIMIT 15
     """)
-    bar_chart(failed, "job_name", "failures", "Jobs les plus en échec", COLORS["danger"], orientation="h")
+    bar_chart(failed, "job_name", "failures", "Most failed jobs", COLORS["danger"], orientation="h", help=HELP["top_failed_jobs"])
     data_table(df)
 
 
 def render_warehouse_scaling(run_query) -> None:
-    page_header("Scaling warehouses", "Événements scale up/down SQL warehouses")
+    page_header("Warehouse scaling", "SQL warehouse scale up/down events")
     df, err = run_query(f"""
         SELECT event_type, COUNT(*) AS events
         FROM compute_warehouse_events
@@ -153,7 +153,7 @@ def render_warehouse_scaling(run_query) -> None:
     """)
     if show_error(err):
         return
-    bar_chart(df, "event_type", "events", "Types d'événements warehouse")
+    bar_chart(df, "event_type", "events", "Warehouse event types", help=HELP["warehouse_event_types"])
     timeline, _ = run_query(f"""
         SELECT CAST(event_time AS DATE) AS day, event_type, COUNT(*) AS n
         FROM compute_warehouse_events
@@ -161,15 +161,14 @@ def render_warehouse_scaling(run_query) -> None:
         GROUP BY 1, 2 ORDER BY 1
     """)
     if timeline is not None and not timeline.empty:
-        import plotly.express as px
         data = _drop_blank_categories(_sanitize_chart_df(timeline, "event_type", "day"), "event_type")
         fig = px.bar(data, x="day", y="n", color="event_type", template="plotly_white")
         fig.update_xaxes(type="category")
-        plotly_figure(fig, title=f"Timeline événements ({period_label()})")
+        plotly_figure(fig, title="Warehouse events over time", help=HELP["warehouse_event_timeline"])
 
 
 def render_remediation(run_query) -> None:
-    page_header("Plan de remédiation", "Actions priorisées basées sur les signaux")
+    page_header("Action plan", "Priority fixes based on signals")
     actions = []
 
     ghosts, _ = run_query(f"""
@@ -178,33 +177,33 @@ def render_remediation(run_query) -> None:
           AND cluster_id IS NOT NULL AND {f_usage_date()}
     """)
     if ghosts is not None and int(ghosts.iloc[0]["n"] or 0) > 0:
-        actions.append(("Enforcer auto-termination week-end", "Compute Waste", "Facile", f"{ghosts.iloc[0]['n']} clusters actifs WE"))
+        actions.append(("Enable weekend auto-stop", "Compute waste", "Easy", f"{ghosts.iloc[0]['n']} weekend clusters"))
 
     spill, _ = run_query(f"""
         SELECT COUNT(*) AS n FROM query_history_full
         WHERE spilled_local_bytes > 5e9 AND {f_ts_date("start_time")}
     """)
     if spill is not None and int(spill.iloc[0]["n"] or 0) > 0:
-        actions.append(("Optimiser requêtes avec spill >5GB", "SQL Performance", "Moyen", f"{spill.iloc[0]['n']} requêtes"))
+        actions.append(("Fix queries with spill >5GB", "SQL performance", "Medium", f"{spill.iloc[0]['n']} queries"))
 
     fails, _ = run_query(f"""
         SELECT COUNT(*) AS n FROM job_run_timeline_parsed
         WHERE result_state = 'FAILED' AND {f_ts_date("start_ts")}
     """)
     if fails is not None and int(fails.iloc[0]["n"] or 0) > 0:
-        actions.append(("Investiguer jobs FAILED récurrents", "Reliability", "Moyen", f"{fails.iloc[0]['n']} échecs"))
+        actions.append(("Investigate failed jobs", "Reliability", "Medium", f"{fails.iloc[0]['n']} failures"))
 
     denied, _ = run_query(f"""
         SELECT COUNT(*) AS n FROM access_audit_parsed
         WHERE status_code = 403 AND {f_event_date()}
     """)
     if denied is not None and int(denied.iloc[0]["n"] or 0) > 0:
-        actions.append(("Revoir permissions UC", "Gouvernance", "Facile", f"{denied.iloc[0]['n']} accès refusés"))
+        actions.append(("Review UC permissions", "Governance", "Easy", f"{denied.iloc[0]['n']} denied access"))
 
     actions.extend([
-        ("Migrer AP dev vers serverless SQL", "Idle Compute", "Moyen", "Estimation -20% DBU AP"),
-        ("VACUUM tables bronze/silver", "Storage", "Facile", "Rétention 7j recommandée"),
-        ("Activer policies serverless", "Cost Control", "Facile", "Tags CostCenter obligatoires"),
+        ("Move dev to serverless SQL", "Idle compute", "Medium", "Est. −20% DBU on AP"),
+        ("VACUUM bronze/silver tables", "Storage", "Easy", "7-day retention suggested"),
+        ("Enable serverless policies", "Cost control", "Easy", "Require CostCenter tags"),
     ])
 
-    st.dataframe(pd.DataFrame(actions, columns=["Action", "Domaine", "Effort", "Signal"]), use_container_width=True)
+    st.dataframe(pd.DataFrame(actions, columns=["Action", "Area", "Effort", "Signal"]), use_container_width=True)

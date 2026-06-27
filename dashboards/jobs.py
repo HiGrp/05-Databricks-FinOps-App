@@ -1,8 +1,8 @@
-"""Dashboards jobs & workflows."""
+"""Jobs & workflows dashboards."""
 
 import plotly.express as px
-import streamlit as st
 
+from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     data_table,
@@ -10,21 +10,19 @@ from dashboards.components import (
     line_chart,
     metrics_row,
     page_header,
-    pie_chart,
     plotly_figure,
     show_error,
-    status_kpi_cards,
     int_or_zero,
     COLORS,
     _drop_blank_categories,
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
-from dashboards.date_filter import f_ts_date, f_workspace, period_label
+from dashboards.date_filter import f_ts_date, period_label
 
 
 def render_runs_overview(run_query) -> None:
-    page_header("Overview runs", fq("lakeflow.job_run_timeline"))
+    page_header("Run overview", fq("lakeflow.job_run_timeline"))
     df, err = run_query(f"""
         SELECT COUNT(*) AS total,
                SUM(CASE WHEN result_state = 'SUCCEEDED' THEN 1 ELSE 0 END) AS ok,
@@ -44,9 +42,9 @@ def render_runs_overview(run_query) -> None:
         avg_min = None
     metrics_row([
         (f"Runs ({period_label()})", f"{total:,}", None),
-        ("Succès", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—"),
-        ("Échecs", f"{ko:,}", None),
-        ("Durée moy.", f"{avg_min} min" if avg_min is not None else "—", None),
+        ("Success", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—"),
+        ("Failed", f"{ko:,}", None),
+        ("Avg duration", f"{avg_min} min" if avg_min is not None else "—", None),
     ])
     daily, _ = run_query(f"""
         SELECT CAST(start_ts AS DATE) AS day, COUNT(*) AS runs
@@ -54,11 +52,11 @@ def render_runs_overview(run_query) -> None:
         WHERE {f_ts_date("start_ts")}
         GROUP BY 1 ORDER BY 1
     """)
-    line_chart(daily, "day", "runs", "Runs par jour")
+    line_chart(daily, "day", "runs", "Runs per day", help=HELP["runs_per_day"])
 
 
 def render_success_rates(run_query) -> None:
-    page_header("Taux de succès", "Fiabilité par job")
+    page_header("Success rate", "Reliability per job")
     df, err = run_query(f"""
         SELECT job_name,
                COUNT(*) AS runs,
@@ -70,12 +68,15 @@ def render_success_rates(run_query) -> None:
     """)
     if show_error(err):
         return
-    bar_chart(df, "job_name", "success_pct", "Taux de succès (%) — plus bas = priorité", COLORS["success"], orientation="h")
+    bar_chart(
+        df, "job_name", "success_pct", "Success rate (%) — fix low bars first",
+        COLORS["success"], orientation="h", help=HELP["success_rate"],
+    )
     data_table(df)
 
 
 def render_durations_queues(run_query) -> None:
-    page_header("Durées & queues", "run_duration vs queue_duration")
+    page_header("Duration & queue", "Run time vs queue time")
     df, err = run_query(f"""
         SELECT job_name,
                ROUND(AVG(run_duration_ms)/1000, 0) AS avg_run_s,
@@ -91,12 +92,13 @@ def render_durations_queues(run_query) -> None:
         df,
         "job_name",
         ["avg_run_s", "avg_queue_s", "avg_exec_s"],
-        "Durées moyennes par job (s)",
+        "Avg duration per job (s)",
+        help=HELP["job_durations"],
     )
 
 
 def render_task_breakdown(run_query) -> None:
-    page_header("Breakdown tasks", "job_tasks — types et résultats")
+    page_header("Tasks", "Tasks by type and result")
     df, err = run_query(f"""
         SELECT task_type, result_state, COUNT(*) AS tasks
         FROM job_tasks_parsed
@@ -108,12 +110,12 @@ def render_task_breakdown(run_query) -> None:
     if df is not None and not df.empty:
         data = _drop_blank_categories(_sanitize_chart_df(df, "task_type", "result_state"), "task_type", "result_state")
         fig = px.sunburst(data, path=["task_type", "result_state"], values="tasks", template="plotly_white")
-        plotly_figure(fig, title="Tasks hierarchy")
+        plotly_figure(fig, title="Task breakdown", help=HELP["tasks_hierarchy"])
     data_table(df.head(50) if df is not None else None)
 
 
 def render_runs_by_team(run_query) -> None:
-    page_header("Runs par équipe", "Attribution via custom_tags")
+    page_header("By team", "Runs by team tag")
     df, err = run_query(f"""
         SELECT team, result_state, COUNT(*) AS runs
         FROM job_run_timeline_parsed
@@ -126,4 +128,4 @@ def render_runs_by_team(run_query) -> None:
         data = _drop_blank_categories(_sanitize_chart_df(df, "team", "result_state"), "team", "result_state")
         fig = px.bar(data, x="team", y="runs", color="result_state", template="plotly_white")
         fig.update_xaxes(type="category")
-        plotly_figure(fig, title="Runs par équipe")
+        plotly_figure(fig, title="Runs by team", help=HELP["runs_by_team"])

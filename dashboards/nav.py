@@ -1,46 +1,46 @@
-"""Navigation — une vue consolidée par catégorie."""
+"""Navigation — one consolidated view per category."""
 
 from __future__ import annotations
 
 from dashboards import category_views
 
 CATEGORIES: dict[str, dict] = {
-    "Accueil": {
+    "Home": {
         "icon": "🏠",
-        "description": "Vue globale du workspace",
+        "description": "Workspace overview",
         "render": category_views.render_accueil,
     },
     "FinOps": {
         "icon": "💰",
-        "description": "Coûts, DBU, attribution",
+        "description": "Cost, DBU, chargeback",
         "render": category_views.render_finops,
     },
-    "Optimisation": {
+    "Optimization": {
         "icon": "⚡",
-        "description": "Waste, perf, remédiation",
+        "description": "Waste, SQL perf, fixes",
         "render": category_views.render_optimisation,
     },
-    "Sécurité & Gouvernance": {
+    "Security": {
         "icon": "🔒",
-        "description": "Audit, UC, accès",
+        "description": "Audit, Unity Catalog, access",
         "render": category_views.render_securite,
     },
     "Compute": {
         "icon": "🖥️",
-        "description": "Clusters & runtime",
+        "description": "Clusters and runtime",
         "render": category_views.render_compute,
     },
-    "Jobs & Workflows": {
+    "Jobs": {
         "icon": "🔄",
-        "description": "Lakeflow, runs, tasks",
+        "description": "Runs, tasks, reliability",
         "render": category_views.render_jobs,
     },
-    "SQL & Warehouses": {
+    "SQL": {
         "icon": "📊",
-        "description": "Query history, warehouses",
+        "description": "Queries and warehouses",
         "render": category_views.render_sql,
     },
-    "Plateforme": {
+    "Platform": {
         "icon": "🛠️",
         "description": "API, ingestion, logs",
         "render": category_views.render_plateforme,

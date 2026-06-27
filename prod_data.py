@@ -137,7 +137,7 @@ def read_driver_log(filename: str, max_chars: int = 8000) -> str:
         content = resp.contents.read().decode("utf-8", errors="replace")
         return content[:max_chars]
     except Exception as exc:
-        return f"Erreur lecture log: {exc}"
+        return f"Log read error: {exc}"
 
 
 def _query_table(table: str, limit: int = 200) -> pd.DataFrame:
@@ -150,18 +150,15 @@ def _query_table(table: str, limit: int = 200) -> pd.DataFrame:
     return df
 
 
-def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
-    """Exécute du SQL sur un SQL Warehouse (INLINE — pas de connexion externe)."""
-    from dashboards.sql_tables import adapt_sql_for_databricks
-
-    sql = adapt_sql_for_databricks(sql)
+def _execute_sql_impl(sql: str) -> tuple[pd.DataFrame | None, str | None]:
+    """Run adapted SQL on SQL Warehouse (no cache)."""
     try:
         import time
 
         w = _workspace_client()
         warehouse_id = _resolve_warehouse_id(w)
         if not warehouse_id:
-            return None, "Aucun SQL Warehouse disponible."
+            return None, "No SQL warehouse available."
 
         resp = w.statement_execution.execute_statement(
             warehouse_id=warehouse_id,
@@ -174,15 +171,14 @@ def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
             resp = w.statement_execution.get_statement(statement_id=statement_id)
 
         if resp.status.state.value == "FAILED":
-            msg = resp.status.error.message if resp.status.error else "Échec SQL"
+            msg = resp.status.error.message if resp.status.error else "SQL failed"
             return None, msg
 
         if resp.result and resp.result.data_array:
             columns = [col.name for col in resp.manifest.schema.columns]
             df = pd.DataFrame(resp.result.data_array, columns=columns)
-            # data_array returns every value as a string — cast to declared types
-            _NUMERIC  = {"BIGINT", "INT", "INTEGER", "SMALLINT", "TINYINT",
-                         "DOUBLE", "FLOAT", "DECIMAL", "LONG", "SHORT", "BYTE"}
+            _NUMERIC = {"BIGINT", "INT", "INTEGER", "SMALLINT", "TINYINT",
+                        "DOUBLE", "FLOAT", "DECIMAL", "LONG", "SHORT", "BYTE"}
             _TEMPORAL = {"TIMESTAMP", "TIMESTAMP_NTZ", "DATE"}
             for col_info in resp.manifest.schema.columns:
                 base_type = (col_info.type_text or "").upper().split("(")[0].strip()
@@ -198,6 +194,15 @@ def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
         return pd.DataFrame(), None
     except Exception as exc:
         return None, str(exc)
+
+
+def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
+    """Execute SQL with 5-minute cache; bust via sidebar Refresh."""
+    from dashboards.query_cache import cached_execute, get_cache_key
+    from dashboards.sql_tables import adapt_sql_for_databricks
+
+    adapted = adapt_sql_for_databricks(sql)
+    return cached_execute(get_cache_key(), adapted)
 
 
 def _resolve_warehouse_id(w) -> str | None:
@@ -243,3 +248,31 @@ def load_jsonl_file_prod(relative_path: str) -> pd.DataFrame | None:
         return df if df is not None else pd.DataFrame()
     except Exception:
         return pd.DataFrame()
+
+
+import streamlit as st  # noqa: E402 — cache decorators for API helpers
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_clusters_api_cached(_cache_key: tuple) -> dict:
+    return fetch_clusters_api()
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_warehouses_api_cached(_cache_key: tuple) -> dict:
+    return fetch_warehouses_api()
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_jobs_api_cached(_cache_key: tuple) -> dict:
+    return fetch_jobs_api()
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_cluster_events_cached(_cache_key: tuple) -> pd.DataFrame:
+    return fetch_cluster_events_api()
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_ingestion_logs_cached(_cache_key: tuple) -> pd.DataFrame:
+    return fetch_ingestion_logs()

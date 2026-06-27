@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,7 +21,7 @@ COLORS = {
 }
 
 CHART_COLOR_SEQUENCE = PLOTLY_TEMPLATE["layout"]["colorway"]
-NULL_LABEL = "(non renseigné)"
+NULL_LABEL = "(empty)"
 _BLANK_LABELS = frozenset({"", "nan", "none", "<na>", "nat", "undefined", "null"})
 
 
@@ -155,31 +157,48 @@ def show_error(err: str | None) -> bool:
     return False
 
 
-def show_empty(message: str = "Aucune donnée pour cette période.") -> None:
+def show_empty(message: str = "No data for this period.") -> None:
     st.info(message)
 
 
+def _render_chart_title(title: str, help: str | None = None) -> None:
+    if not help:
+        st.markdown(f"**{title}**")
+        return
+    st.markdown(
+        f'<div class="chart-title-row">'
+        f'<strong class="chart-title-text">{html.escape(title)}</strong>'
+        f'<span class="chart-info-tip" tabindex="0">'
+        f'<span class="chart-info-icon">ⓘ</span>'
+        f'<span class="chart-info-popup">{html.escape(help)}</span>'
+        f'</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def kpi_cards(items: list[dict]) -> None:
-    """KPIs via st.metric — pas de HTML (évite l'affichage brut des balises div)."""
+    """KPIs via st.metric — max 3 per row (mobile-friendly)."""
     if not items:
         return
-    cols = st.columns(len(items))
-    for col, item in zip(cols, items):
-        with col:
-            with st.container(border=True):
-                icon = item.get("icon", "")
-                label = item.get("label", "")
-                display_label = f"{icon} {label}".strip() if icon else label
-                delta = item.get("delta")
-                tone = item.get("delta_tone", "neutral")
-                # inverse = hausse en rouge (adapté FinOps / coûts)
-                delta_color = "inverse" if tone == "up" else "normal"
-                st.metric(
-                    label=display_label,
-                    value=item.get("value", "—"),
-                    delta=delta,
-                    delta_color=delta_color if delta else "off",
-                )
+    for start in range(0, len(items), 3):
+        chunk = items[start : start + 3]
+        cols = st.columns(len(chunk))
+        for col, item in zip(cols, chunk):
+            with col:
+                with st.container(border=True):
+                    icon = item.get("icon", "")
+                    label = item.get("label", "")
+                    display_label = f"{icon} {label}".strip() if icon else label
+                    delta = item.get("delta")
+                    tone = item.get("delta_tone", "neutral")
+                    delta_color = "inverse" if tone == "up" else "normal"
+                    st.metric(
+                        label=display_label,
+                        value=item.get("value", "—"),
+                        delta=delta,
+                        delta_color=delta_color if delta else "off",
+                        help=item.get("help"),
+                    )
 
 
 def metrics_row(items: list[tuple[str, str, str | None]]) -> None:
@@ -189,14 +208,22 @@ def metrics_row(items: list[tuple[str, str, str | None]]) -> None:
     ])
 
 
-def _chart_container(title: str | None, render_fn) -> None:
+def _chart_container(title: str | None, render_fn, *, help: str | None = None) -> None:
     with st.container(border=True):
         if title:
-            st.markdown(f"**{title}**")
+            _render_chart_title(title, help)
         render_fn()
 
 
-def line_chart(df: pd.DataFrame, x: str, y: str, title: str, color: str = COLORS["primary"]) -> None:
+def line_chart(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    title: str,
+    color: str = COLORS["primary"],
+    *,
+    help: str | None = None,
+) -> None:
     if df is None or df.empty:
         show_empty()
         return
@@ -212,7 +239,7 @@ def line_chart(df: pd.DataFrame, x: str, y: str, title: str, color: str = COLORS
         fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
-    _chart_container(title, _render)
+    _chart_container(title, _render, help=help)
 
 
 def bar_chart(
@@ -222,6 +249,8 @@ def bar_chart(
     title: str,
     color: str = COLORS["primary"],
     orientation: str = "v",
+    *,
+    help: str | None = None,
 ) -> None:
     if df is None or df.empty:
         show_empty()
@@ -243,10 +272,17 @@ def bar_chart(
         fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
-    _chart_container(title, _render)
+    _chart_container(title, _render, help=help)
 
 
-def pie_chart(df: pd.DataFrame, names: str, values: str, title: str) -> None:
+def pie_chart(
+    df: pd.DataFrame,
+    names: str,
+    values: str,
+    title: str,
+    *,
+    help: str | None = None,
+) -> None:
     if df is None or df.empty:
         show_empty()
         return
@@ -262,10 +298,18 @@ def pie_chart(df: pd.DataFrame, names: str, values: str, title: str) -> None:
         fig.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig, use_container_width=True)
 
-    _chart_container(title, _render)
+    _chart_container(title, _render, help=help)
 
 
-def area_chart(df: pd.DataFrame, x: str, y: str, color: str | None, title: str) -> None:
+def area_chart(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    color: str | None,
+    title: str,
+    *,
+    help: str | None = None,
+) -> None:
     if df is None or df.empty:
         show_empty()
         return
@@ -281,15 +325,15 @@ def area_chart(df: pd.DataFrame, x: str, y: str, color: str | None, title: str) 
         fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
-    _chart_container(title, _render)
+    _chart_container(title, _render, help=help)
 
 
-def plotly_figure(fig: go.Figure, *, title: str | None = None) -> None:
+def plotly_figure(fig: go.Figure, *, title: str | None = None, help: str | None = None) -> None:
     _apply_plotly_theme(fig)
     fig.update_layout(title=None)
     with st.container(border=True):
         if title:
-            st.markdown(f"**{title}**")
+            _render_chart_title(title, help)
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -300,6 +344,7 @@ def grouped_bar_chart(
     title: str,
     *,
     barmode: str = "group",
+    help: str | None = None,
 ) -> None:
     if df is None or df.empty:
         show_empty()
@@ -316,16 +361,22 @@ def grouped_bar_chart(
         fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
-    _chart_container(title, _render)
+    _chart_container(title, _render, help=help)
 
 
-def data_table(df: pd.DataFrame | None, height: int | None = None, title: str | None = None) -> None:
+def data_table(
+    df: pd.DataFrame | None,
+    height: int | None = None,
+    title: str | None = None,
+    *,
+    help: str | None = None,
+) -> None:
     if df is None or df.empty:
         show_empty()
         return
     with st.container(border=True):
         if title:
-            st.markdown(f"**{title}**")
+            _render_chart_title(title, help)
         st.dataframe(
             df,
             use_container_width=True,
@@ -348,8 +399,8 @@ def two_column_charts(left_fn, right_fn) -> None:
 
 _STATUS_COLORS = {
     "ok": {"bg": "#ECFDF5", "border": "#059669", "text": "#065F46", "badge": "OK"},
-    "warning": {"bg": "#FFFBEB", "border": "#D97706", "text": "#92400E", "badge": "Attention"},
-    "danger": {"bg": "#FEF2F2", "border": "#DC2626", "text": "#991B1B", "badge": "Critique"},
+    "warning": {"bg": "#FFFBEB", "border": "#D97706", "text": "#92400E", "badge": "Warning"},
+    "danger": {"bg": "#FEF2F2", "border": "#DC2626", "text": "#991B1B", "badge": "Critical"},
 }
 
 

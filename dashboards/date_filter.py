@@ -21,18 +21,18 @@ def init_dates() -> None:
 
 def render_date_filter(sidebar) -> None:
     init_dates()
-    sidebar.markdown("**Période**")
+    sidebar.markdown("**Period**")
     c1, c2 = sidebar.columns(2)
     with c1:
         st.session_state.filter_date_start = c1.date_input(
-            "Du",
+            "From",
             value=st.session_state.filter_date_start,
             key="filter_date_start_input",
             label_visibility="collapsed",
         )
     with c2:
         st.session_state.filter_date_end = c2.date_input(
-            "Au",
+            "To",
             value=st.session_state.filter_date_end,
             key="filter_date_end_input",
             label_visibility="collapsed",
@@ -123,23 +123,23 @@ def render_workspace_filter(sidebar, run_query) -> None:
     if not trigrammes and not environnements:
         return
 
-    sidebar.markdown("**Filtres workspace**")
+    sidebar.markdown("**Workspace filters**")
 
     selected_tri = sidebar.multiselect(
         "Trigramme",
         options=trigrammes,
         default=st.session_state.get("filter_trigramme", []),
         key="filter_trigramme_input",
-        placeholder="Tous",
+        placeholder="All",
     )
     st.session_state["filter_trigramme"] = selected_tri
 
     selected_env = sidebar.multiselect(
-        "Environnement",
+        "Environment",
         options=environnements,
         default=st.session_state.get("filter_environnement", []),
         key="filter_environnement_input",
-        placeholder="Tous",
+        placeholder="All",
     )
     st.session_state["filter_environnement"] = selected_env
 

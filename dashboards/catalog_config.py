@@ -36,14 +36,14 @@ def render_catalog_filter(sidebar) -> None:
     if "system_catalog" not in st.session_state:
         st.session_state.system_catalog = DEFAULT_CATALOG
 
-    sidebar.markdown("**Catalogue system tables**")
+    sidebar.markdown("**System tables catalog**")
     previous = st.session_state.system_catalog
     value = sidebar.text_input(
-        "Catalogue",
+        "Catalog",
         value=previous,
         key="system_catalog_input",
         placeholder=DEFAULT_CATALOG,
-        help="Nom du catalogue Unity Catalog (ex. system, system_tgv_pfpr).",
+        help="Unity Catalog name for system tables (e.g. system).",
         label_visibility="collapsed",
     )
     st.session_state.system_catalog = _sanitize_catalog(value)

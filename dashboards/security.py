@@ -1,8 +1,8 @@
-"""Dashboards sécurité & gouvernance."""
+"""Security & governance dashboards."""
 
-import streamlit as st
 import plotly.express as px
 
+from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     data_table,
@@ -19,11 +19,11 @@ from dashboards.components import (
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
-from dashboards.date_filter import f_event_date, f_workspace, period_label
+from dashboards.date_filter import f_event_date, period_label
 
 
 def render_audit_overview(run_query) -> None:
-    page_header("Audit Overview", f"Volume et répartition des événements {fq('access.audit')}")
+    page_header("Audit summary", f"Event volume from {fq('access.audit')}")
     df, err = run_query(f"""
         SELECT COUNT(*) AS total,
                COUNT(DISTINCT user_email) AS users,
@@ -36,8 +36,8 @@ def render_audit_overview(run_query) -> None:
     r = df.iloc[0]
     metrics_row([
         (f"Events ({period_label()})", format_int(r["total"]), None),
-        ("Utilisateurs uniques", format_int(r["users"]), None),
-        ("Events erreur (4xx/5xx)", format_int(r["errors"]), None),
+        ("Unique users", format_int(r["users"]), None),
+        ("Errors (4xx/5xx)", format_int(r["errors"]), None),
     ])
     daily, _ = run_query(f"""
         SELECT event_dt, COUNT(*) AS events
@@ -45,11 +45,11 @@ def render_audit_overview(run_query) -> None:
         WHERE {f_event_date()}
         GROUP BY 1 ORDER BY 1
     """)
-    line_chart(daily, "event_dt", "events", "Volume audit journalier")
+    line_chart(daily, "event_dt", "events", "Daily audit volume", help=HELP["audit_daily"])
 
 
 def render_permission_denied(run_query) -> None:
-    page_header("Accès refusés", "Événements 403 — risque gouvernance")
+    page_header("Access denied", "403 events — permission issues")
     df, err = run_query(f"""
         SELECT user_email, service_name, action_name, event_ts, error_message
         FROM access_audit_parsed
@@ -65,12 +65,12 @@ def render_permission_denied(run_query) -> None:
         WHERE status_code = 403 AND {f_event_date()}
         GROUP BY 1 ORDER BY denied DESC
     """)
-    bar_chart(by_svc, "service_name", "denied", "403 par service", COLORS["danger"])
+    bar_chart(by_svc, "service_name", "denied", "403 by service", COLORS["danger"], help=HELP["denied_by_service"])
     data_table(df, height=400)
 
 
 def render_unity_catalog(run_query) -> None:
-    page_header("Unity Catalog", "Actions UC — tables, grants, metastore")
+    page_header("Unity Catalog", "UC actions: tables, grants, metastore")
     df, err = run_query(f"""
         SELECT action_name, COUNT(*) AS events
         FROM access_audit_parsed
@@ -80,7 +80,7 @@ def render_unity_catalog(run_query) -> None:
     """)
     if show_error(err):
         return
-    pie_chart(df, "action_name", "events", "Actions Unity Catalog")
+    pie_chart(df, "action_name", "events", "UC actions", help=HELP["uc_actions"])
     recent, _ = run_query(f"""
         SELECT user_email, action_name, event_ts, request_params
         FROM access_audit_parsed
@@ -91,7 +91,7 @@ def render_unity_catalog(run_query) -> None:
 
 
 def render_secrets_tokens(run_query) -> None:
-    page_header("Secrets & tokens", "Accès secrets, tokenLogin, IAM")
+    page_header("Secrets & tokens", "Secrets, PAT, and IAM events")
     df, err = run_query(f"""
         SELECT service_name, action_name, user_email, event_ts
         FROM access_audit_parsed
@@ -108,12 +108,12 @@ def render_secrets_tokens(run_query) -> None:
           AND {f_event_date()}
         GROUP BY 1, 2 ORDER BY n DESC
     """)
-    bar_chart(counts, "action_name", "n", "Secrets / tokens / IAM", orientation="h")
+    bar_chart(counts, "action_name", "n", "Secrets / tokens / IAM", orientation="h", help=HELP["secrets_tokens"])
     data_table(df)
 
 
 def render_authentication(run_query) -> None:
-    page_header("Authentification", "Sessions, tokenLogin, origine IP")
+    page_header("Sign-in", "Sessions, token login, source IP")
     df, err = run_query(f"""
         SELECT source_ip_address, COUNT(*) AS logins
         FROM access_audit_parsed
@@ -123,7 +123,7 @@ def render_authentication(run_query) -> None:
     """)
     if show_error(err):
         return
-    bar_chart(df, "source_ip_address", "logins", "tokenLogin par IP")
+    bar_chart(df, "source_ip_address", "logins", "Token login by IP", help=HELP["login_by_ip"])
     agents, _ = run_query(f"""
         SELECT user_agent, COUNT(*) AS n
         FROM access_audit_parsed
@@ -134,7 +134,7 @@ def render_authentication(run_query) -> None:
 
 
 def render_top_actors(run_query) -> None:
-    page_header("Top acteurs", "Utilisateurs les plus actifs (audit)")
+    page_header("Top users", "Most active users in audit log")
     df, err = run_query(f"""
         SELECT user_email, COUNT(*) AS actions,
                SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors
@@ -144,12 +144,12 @@ def render_top_actors(run_query) -> None:
     """)
     if show_error(err):
         return
-    bar_chart(df, "user_email", "actions", "Actions par utilisateur", orientation="h")
+    bar_chart(df, "user_email", "actions", "Actions by user", orientation="h", help=HELP["top_actors"])
     data_table(df)
 
 
 def render_activity_heatmap(run_query) -> None:
-    page_header("Heatmap activité", "Intensité audit par jour et service")
+    page_header("Activity heatmap", "Audit intensity by day and service")
     df, err = run_query(f"""
         SELECT event_dt, service_name, COUNT(*) AS events
         FROM access_audit_parsed
@@ -163,4 +163,4 @@ def render_activity_heatmap(run_query) -> None:
     pivot.index = pivot.index.map(_coerce_label)
     pivot.columns = [_coerce_label(c) for c in pivot.columns]
     fig = px.imshow(pivot, aspect="auto", color_continuous_scale="Blues", template="plotly_white")
-    plotly_figure(fig, title=f"Heatmap audit (service × date) — {period_label()}")
+    plotly_figure(fig, title="Audit heatmap", help=HELP["audit_heatmap"])

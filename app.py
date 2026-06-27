@@ -28,6 +28,6 @@ st.session_state["nav_desc"] = meta.get("desc") or ""
 
 render_fn = get_category_render_fn(category)
 if render_fn is None:
-    st.error(f"Espace introuvable : **{category}**")
+    st.error(f"Page not found: **{category}**")
 else:
     render_fn(run_query)

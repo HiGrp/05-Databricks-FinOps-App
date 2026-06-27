@@ -1,8 +1,10 @@
-"""Dashboards compute."""
+"""Compute dashboards."""
 
 import plotly.express as px
+import pandas as pd
 import streamlit as st
 
+from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     data_table,
@@ -10,15 +12,15 @@ from dashboards.components import (
     page_header,
     pie_chart,
     plotly_figure,
+    show_empty,
     show_error,
-    COLORS,
 )
 from dashboards.catalog_config import fq
 from dashboards.date_filter import f_workspace
 
 
 def render_cluster_inventory(run_query) -> None:
-    page_header("Inventaire clusters", f"{fq('compute.clusters')} — état du parc")
+    page_header("Cluster list", f"{fq('compute.clusters')} — current fleet")
     df, err = run_query(f"""
         SELECT cluster_name, cluster_id, owned_by, worker_count,
                driver_node_type, auto_termination_minutes, data_security_mode
@@ -31,13 +33,13 @@ def render_cluster_inventory(run_query) -> None:
     metrics_row([
         ("Clusters", str(len(df) if df is not None else 0), None),
         ("Photon", str(len(df[df["runtime_engine"] == "PHOTON"]) if df is not None and "runtime_engine" in df.columns else 0), None),
-        ("Single-node (0 workers)", str(len(df[df["worker_count"] == 0]) if df is not None else 0), None),
+        ("Single-node", str(len(df[df["worker_count"] == 0]) if df is not None else 0), None),
     ])
     data_table(df)
 
 
 def render_cluster_policies(run_query) -> None:
-    page_header("Politiques & tags", "Tags, policies, data security mode")
+    page_header("Tags & policies", "Teams, tags, and security mode")
     c1, c2 = st.columns(2)
     with c1:
         tags, err = run_query("""
@@ -46,31 +48,51 @@ def render_cluster_policies(run_query) -> None:
             GROUP BY 1
         """)
         if not show_error(err):
-            pie_chart(tags, "team", "clusters", "Clusters par Team")
+            pie_chart(tags, "team", "clusters", "Clusters by team", help=HELP["clusters_by_team"])
     with c2:
         dsm, _ = run_query("""
             SELECT data_security_mode, COUNT(*) AS n
             FROM compute_clusters_parsed GROUP BY 1
         """)
-        pie_chart(dsm, "data_security_mode", "n", "Data security mode")
+        pie_chart(dsm, "data_security_mode", "n", "Data security mode", help=HELP["data_security_mode"])
     src, _ = run_query("""
         SELECT cluster_source, COUNT(*) AS n FROM compute_clusters_parsed GROUP BY 1
     """)
-    bar_chart(src, "cluster_source", "n", "Source de création")
+    bar_chart(src, "cluster_source", "n", "Cluster source", help=HELP["cluster_source"])
 
 
 def render_cluster_events(run_query) -> None:
-    page_header("Timeline événements", "Événements cluster (API ou logs)")
-    st.info(
-        "Événements via API clusters/events, ou configurez "
-        "`FINOPS_CLUSTER_EVENTS_TABLE` pour un historique Delta."
-    )
+    page_header("Cluster events", "Cluster event timeline")
+    from dashboards.query_cache import get_cache_key
+    from prod_data import CLUSTER_EVENTS_TABLE, fetch_cluster_events_cached
+
+    key = get_cache_key()
+    with st.spinner("Loading cluster events..."):
+        df = fetch_cluster_events_cached(key)
+
+    if df is None or df.empty:
+        if CLUSTER_EVENTS_TABLE:
+            show_empty("No cluster events in the configured table.")
+        else:
+            st.info(
+                "Events from clusters/events API (sample), or set "
+                "`FINOPS_CLUSTER_EVENTS_TABLE` for full Delta history."
+            )
+        return
+
+    from dashboards.components import line_chart
+
+    if "timestamp" in df.columns:
+        daily = df.copy()
+        daily["day"] = pd.to_datetime(daily["timestamp"], errors="coerce").dt.date
+        counts = daily.groupby("day", as_index=False).size().rename(columns={"size": "events"})
+        line_chart(counts, "day", "events", "Events per day", help="Daily cluster event count.")
+    data_table(df.head(200))
 
 
 def render_runtime_versions(run_query) -> None:
-    page_header("Runtime & versions", "DBR version, node types, engines")
+    page_header("Runtime", "DBR versions and node types")
 
-    # --- Stacked bar chart : runtime par workspace (comme D_TGV_AUDIT) ---
     df_rt, err = run_query("""
         SELECT
             cp.dbr_version,
@@ -84,7 +106,7 @@ def render_runtime_versions(run_query) -> None:
                     '-'
                 ),
                 UPPER(ws.workspace_name),
-                'Autre'
+                'Other'
             ) AS workspace_short,
             COUNT(*) AS nombre
         FROM (
@@ -103,10 +125,9 @@ def render_runtime_versions(run_query) -> None:
         ORDER BY nombre DESC
     """)
     if not show_error(err) and df_rt is not None and not df_rt.empty:
-        df_rt["workspace_short"] = df_rt["workspace_short"].fillna("Autre")
-        df_rt["workspace_short"] = df_rt["workspace_short"].replace({"-": "Autre", "": "Autre"})
+        df_rt["workspace_short"] = df_rt["workspace_short"].fillna("Other")
+        df_rt["workspace_short"] = df_rt["workspace_short"].replace({"-": "Other", "": "Other"})
 
-        # Ordre des runtimes par total decroissant
         runtime_order = (
             df_rt.groupby("dbr_version")["nombre"]
             .sum()
@@ -121,7 +142,7 @@ def render_runtime_versions(run_query) -> None:
             color="workspace_short",
             template="plotly_white",
             category_orders={"dbr_version": runtime_order},
-            labels={"dbr_version": "", "nombre": "Nombre", "workspace_short": ""},
+            labels={"dbr_version": "", "nombre": "Count", "workspace_short": ""},
         )
         fig.update_layout(
             barmode="stack",
@@ -130,11 +151,10 @@ def render_runtime_versions(run_query) -> None:
             margin=dict(b=120, r=160),
         )
         fig.update_xaxes(tickangle=-45, type="category")
-        plotly_figure(fig, title="Versions DBR par workspace")
+        plotly_figure(fig, title="DBR version by workspace", help=HELP["dbr_by_workspace"])
 
-    # --- Node types (conserve) ---
     st.markdown("---")
     nodes, _ = run_query("""
         SELECT driver_node_type, COUNT(*) AS n FROM compute_clusters_parsed GROUP BY 1
     """)
-    bar_chart(nodes, "driver_node_type", "n", "Node types", orientation="h")
+    bar_chart(nodes, "driver_node_type", "n", "Node types", orientation="h", help=HELP["node_types"])

@@ -310,6 +310,108 @@ def inject_theme() -> None:
         div[data-testid="stAlert"] {{
             border-radius: 12px;
         }}
+
+        /* Chart title + hover help */
+        .chart-title-row {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+        }}
+        .chart-title-text {{
+            color: {t["text"]};
+            font-size: 0.95rem;
+        }}
+        .chart-info-tip {{
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: help;
+            outline: none;
+        }}
+        .chart-info-icon {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.15rem;
+            height: 1.15rem;
+            border-radius: 50%;
+            background: {t["card_border"]};
+            color: {t["text_muted"]};
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1;
+        }}
+        .chart-info-tip:hover .chart-info-icon,
+        .chart-info-tip:focus .chart-info-icon {{
+            background: {t["primary"]};
+            color: white;
+        }}
+        .chart-info-popup {{
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 8px);
+            transform: translateX(-50%);
+            width: min(280px, 70vw);
+            padding: 0.55rem 0.75rem;
+            background: {t["text"]};
+            color: #F8FAFC;
+            font-size: 0.78rem;
+            font-weight: 400;
+            line-height: 1.45;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(15,23,42,0.18);
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }}
+        .chart-info-popup::after {{
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: {t["text"]};
+        }}
+        .chart-info-tip:hover .chart-info-popup,
+        .chart-info-tip:focus .chart-info-popup {{
+            visibility: visible;
+            opacity: 1;
+        }}
+
+        /* Mobile — stack KPI metrics */
+        @media (max-width: 768px) {{
+            [data-testid="stSidebar"] {{
+                min-width: 100% !important;
+            }}
+            div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {{
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }}
+            div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) > div[data-testid="column"] {{
+                flex: 1 1 45% !important;
+                min-width: 45% !important;
+                width: 45% !important;
+            }}
+            [data-testid="stMetricValue"] {{
+                font-size: 1.15rem !important;
+            }}
+            .chart-info-popup {{
+                width: min(240px, 85vw);
+                left: 0;
+                transform: none;
+            }}
+        }}
+        @media (max-width: 480px) {{
+            div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) > div[data-testid="column"] {{
+                flex: 1 1 100% !important;
+                min-width: 100% !important;
+                width: 100% !important;
+            }}
+        }}
         </style>
         """,
         unsafe_allow_html=True,
