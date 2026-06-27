@@ -16,6 +16,7 @@ from dashboards.components import (
     COLORS,
     _coerce_label,
     _drop_blank_categories,
+    _prepare_chart_df,
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
@@ -35,9 +36,9 @@ def render_audit_overview(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        (f"Events ({period_label()})", format_int(r["total"]), None),
-        ("Unique users", format_int(r["users"]), None),
-        ("Errors (4xx/5xx)", format_int(r["errors"]), None),
+        (f"Events ({period_label()})", format_int(r["total"]), None, HELP["kpi_audit_events"]),
+        ("Unique users", format_int(r["users"]), None, HELP["kpi_audit_users"]),
+        ("Errors (4xx/5xx)", format_int(r["errors"]), None, HELP["kpi_audit_errors"]),
     ])
     daily, _ = run_query(f"""
         SELECT event_dt, COUNT(*) AS events
@@ -66,7 +67,7 @@ def render_permission_denied(run_query) -> None:
         GROUP BY 1 ORDER BY denied DESC
     """)
     bar_chart(by_svc, "service_name", "denied", "403 by service", COLORS["danger"], help=HELP["denied_by_service"])
-    data_table(df, height=400)
+    data_table(df, height=400, title="Denied access events", help=HELP["tbl_denied_events"])
 
 
 def render_unity_catalog(run_query) -> None:
@@ -87,7 +88,7 @@ def render_unity_catalog(run_query) -> None:
         WHERE service_name = 'unityCatalog' AND {f_event_date()}
         ORDER BY event_ts DESC LIMIT 30
     """)
-    data_table(recent)
+    data_table(recent, title="Recent UC events", help=HELP["tbl_uc_recent"])
 
 
 def render_secrets_tokens(run_query) -> None:
@@ -109,7 +110,7 @@ def render_secrets_tokens(run_query) -> None:
         GROUP BY 1, 2 ORDER BY n DESC
     """)
     bar_chart(counts, "action_name", "n", "Secrets / tokens / IAM", orientation="h", help=HELP["secrets_tokens"])
-    data_table(df)
+    data_table(df, title="Secrets and token events", help=HELP["tbl_secrets_events"])
 
 
 def render_authentication(run_query) -> None:
@@ -130,7 +131,7 @@ def render_authentication(run_query) -> None:
         WHERE {f_event_date()}
         GROUP BY 1 ORDER BY n DESC LIMIT 10
     """)
-    data_table(agents)
+    data_table(agents, title="User agents", help=HELP["tbl_user_agents"])
 
 
 def render_top_actors(run_query) -> None:
@@ -145,7 +146,7 @@ def render_top_actors(run_query) -> None:
     if show_error(err):
         return
     bar_chart(df, "user_email", "actions", "Actions by user", orientation="h", help=HELP["top_actors"])
-    data_table(df)
+    data_table(df, title="Top users detail", help=HELP["tbl_top_actors"])
 
 
 def render_activity_heatmap(run_query) -> None:

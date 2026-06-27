@@ -298,6 +298,10 @@ def inject_theme() -> None:
             margin: 0;
             letter-spacing: -0.025em;
             line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
         }}
         .page-hero-sub {{
             font-size: 0.88rem;
@@ -313,6 +317,16 @@ def inject_theme() -> None:
             margin-top: 0.65rem;
             padding-top: 0.65rem;
             border-top: 1px solid {t["card_border"]};
+        }}
+        .filter-label-row, .nav-label-row {{
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin: 0 0 0.4rem 0;
+        }}
+        .filter-label-row .filter-label,
+        .nav-label-row .nav-section-label {{
+            margin: 0 !important;
         }}
         .page-context-pill {{
             font-size: 0.8rem;
@@ -353,6 +367,10 @@ def inject_theme() -> None:
             color: {t["text"]};
             margin: 0;
             letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
         }}
         .section-head-hint {{
             font-size: 0.8rem;

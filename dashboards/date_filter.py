@@ -6,6 +6,8 @@ from datetime import date, timedelta
 
 import streamlit as st
 
+from dashboards.chart_help import HELP, info_tip_html
+
 
 # ---------------------------------------------------------------------------
 # Période
@@ -21,7 +23,11 @@ def init_dates() -> None:
 
 def render_date_filter(sidebar) -> None:
     init_dates()
-    sidebar.markdown('<p class="filter-label">Period</p>', unsafe_allow_html=True)
+    sidebar.markdown(
+        f'<div class="filter-label-row"><p class="filter-label">Period</p>'
+        f"{info_tip_html(HELP['filter_period_from'])}</div>",
+        unsafe_allow_html=True,
+    )
     c1, c2 = sidebar.columns(2)
     with c1:
         st.session_state.filter_date_start = c1.date_input(
@@ -29,6 +35,7 @@ def render_date_filter(sidebar) -> None:
             value=st.session_state.filter_date_start,
             key="filter_date_start_input",
             label_visibility="collapsed",
+            help=HELP["filter_period_from"],
         )
     with c2:
         st.session_state.filter_date_end = c2.date_input(
@@ -36,6 +43,7 @@ def render_date_filter(sidebar) -> None:
             value=st.session_state.filter_date_end,
             key="filter_date_end_input",
             label_visibility="collapsed",
+            help=HELP["filter_period_to"],
         )
     if st.session_state.filter_date_start > st.session_state.filter_date_end:
         st.session_state.filter_date_end = st.session_state.filter_date_start
@@ -141,7 +149,11 @@ def render_workspace_filter(sidebar, run_query) -> None:
     if not trigrammes and not environnements:
         return
 
-    sidebar.markdown('<p class="filter-label">Workspace</p>', unsafe_allow_html=True)
+    sidebar.markdown(
+        f'<div class="filter-label-row"><p class="filter-label">Workspace</p>'
+        f"{info_tip_html(HELP['filter_trigramme'])}</div>",
+        unsafe_allow_html=True,
+    )
 
     selected_tri = sidebar.multiselect(
         "Trigramme",
@@ -149,6 +161,7 @@ def render_workspace_filter(sidebar, run_query) -> None:
         default=st.session_state.get("filter_trigramme", []),
         key="filter_trigramme_input",
         placeholder="All",
+        help=HELP["filter_trigramme"],
     )
     st.session_state["filter_trigramme"] = selected_tri
 
@@ -158,6 +171,7 @@ def render_workspace_filter(sidebar, run_query) -> None:
         default=st.session_state.get("filter_environnement", []),
         key="filter_environnement_input",
         placeholder="All",
+        help=HELP["filter_environment"],
     )
     st.session_state["filter_environnement"] = selected_env
 

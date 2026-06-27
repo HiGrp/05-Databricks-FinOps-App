@@ -6,6 +6,8 @@ import re
 
 import streamlit as st
 
+from dashboards.chart_help import HELP, info_tip_html
+
 DEFAULT_CATALOG = "system"
 
 
@@ -36,14 +38,18 @@ def render_catalog_filter(sidebar) -> None:
     if "system_catalog" not in st.session_state:
         st.session_state.system_catalog = DEFAULT_CATALOG
 
-    sidebar.markdown('<p class="filter-label">System catalog</p>', unsafe_allow_html=True)
+    sidebar.markdown(
+        f'<div class="filter-label-row"><p class="filter-label">System catalog</p>'
+        f"{info_tip_html(HELP['filter_catalog'])}</div>",
+        unsafe_allow_html=True,
+    )
     previous = st.session_state.system_catalog
     value = sidebar.text_input(
         "Catalog",
         value=previous,
         key="system_catalog_input",
         placeholder=DEFAULT_CATALOG,
-        help="Unity Catalog name for system tables (e.g. system).",
+        help=HELP["filter_catalog"],
         label_visibility="collapsed",
     )
     st.session_state.system_catalog = _sanitize_catalog(value)

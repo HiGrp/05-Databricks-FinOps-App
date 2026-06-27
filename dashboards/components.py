@@ -21,8 +21,67 @@ COLORS = {
 }
 
 CHART_COLOR_SEQUENCE = PLOTLY_TEMPLATE["layout"]["colorway"]
-NULL_LABEL = "(empty)"
+NULL_LABEL = "(not set)"
 _BLANK_LABELS = frozenset({"", "nan", "none", "<na>", "nat", "undefined", "null"})
+
+# Human-readable hover / axis labels (avoids Plotly showing "undefined")
+_FIELD_LABELS = {
+    "usage_date": "Date",
+    "day": "Date",
+    "event_dt": "Date",
+    "month": "Month",
+    "dbu": "DBU",
+    "daily_dbu": "DBU",
+    "weekend_dbu": "DBU",
+    "total_dbu": "DBU",
+    "cluster_name": "Cluster",
+    "cluster_id": "Cluster",
+    "warehouse_name": "Warehouse",
+    "warehouse_id": "Warehouse",
+    "job_name": "Job",
+    "run_as": "User",
+    "executed_by": "User",
+    "user_email": "User",
+    "service_name": "Service",
+    "product": "Product",
+    "billing_origin_product": "Product",
+    "sku_name": "SKU",
+    "team": "Team",
+    "environment": "Environment",
+    "result_state": "Status",
+    "task_type": "Task type",
+    "statement_type": "Statement",
+    "execution_status": "Status",
+    "action_name": "Action",
+    "event_type": "Event",
+    "runs": "Runs",
+    "events": "Events",
+    "queries": "Queries",
+    "failures": "Failures",
+    "success_pct": "Success %",
+    "avg_ms": "Avg time (ms)",
+    "avg_cpu": "Avg CPU %",
+    "avg_mem": "Avg memory %",
+    "spill_gb": "Spill (GB)",
+    "cache_pct": "Cache hit %",
+    "avg_min": "Avg duration (min)",
+    "avg_queue_ms": "Queue time (ms)",
+    "avg_run_s": "Run time (s)",
+    "avg_queue_s": "Queue time (s)",
+    "avg_exec_s": "Execution time (s)",
+    "denied": "Denied",
+    "logins": "Logins",
+    "actions": "Actions",
+    "n": "Count",
+    "nombre": "Count",
+    "dbr_version": "DBR version",
+    "workspace_short": "Workspace",
+    "driver_node_type": "Node type",
+    "data_security_mode": "Security mode",
+    "cluster_source": "Source",
+    "usage_type": "Usage type",
+    "source_ip_address": "Source IP",
+}
 
 
 def int_or_zero(value) -> int:
@@ -64,24 +123,39 @@ def _coerce_label(value) -> str:
     return text
 
 
+def _chart_labels(*columns: str) -> dict[str, str]:
+    return {col: _FIELD_LABELS.get(col, col.replace("_", " ").title()) for col in columns}
+
+
+def _prepare_chart_df(df: pd.DataFrame, *columns: str, color: str | None = None) -> pd.DataFrame:
+    cols = [c for c in columns if c]
+    if color:
+        cols.append(color)
+    if not cols:
+        return _sanitize_chart_df(df)
+    out = _sanitize_chart_df(df, *cols)
+    return _drop_blank_categories(out, *cols)
+
+
 def _apply_plotly_theme(fig: go.Figure) -> go.Figure:
     layout = {k: v for k, v in PLOTLY_TEMPLATE["layout"].items() if k not in ("xaxis", "yaxis", "title")}
     fig.update_layout(**layout)
     fig.update_layout(
-        title=dict(text="", font=PLOTLY_TEMPLATE["layout"]["title"]["font"]),
+        title=None,
         hovermode="closest",
+        legend_title_text=None,
     )
     fig.update_xaxes(
+        title=None,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
-        title_text="",
     )
     fig.update_yaxes(
+        title=None,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
-        title_text="",
     )
     _fix_plotly_traces(fig)
     return fig
@@ -92,8 +166,9 @@ def _fix_plotly_traces(fig: go.Figure) -> None:
         name = trace.name
         if name is None or str(name).strip().lower() in _BLANK_LABELS:
             trace.name = NULL_LABEL
-            if trace.type in ("pie", "sunburst", "funnelarea"):
+            if trace.type in ("bar", "scatter", "pie", "sunburst", "funnelarea", "histogram"):
                 trace.showlegend = False
+    fig.update_traces(hoverlabel=dict(namelength=-1))
 
 
 def _sanitize_chart_df(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
@@ -124,6 +199,12 @@ def _refresh_page_data() -> None:
     st.rerun()
 
 
+def _info_tip_html(help_text: str) -> str:
+    from dashboards.chart_help import info_tip_html
+
+    return info_tip_html(help_text)
+
+
 def page_header(
     title: str,
     subtitle: str,
@@ -131,6 +212,7 @@ def page_header(
     category: str | None = None,
     badge: str | None = None,
     icon: str | None = None,
+    help: str | None = None,
 ) -> None:
     if st.session_state.get("_suppress_page_header"):
         return
@@ -154,16 +236,20 @@ def page_header(
         f'<p class="page-hero-sub">{html.escape(subtitle)}</p>' if subtitle else ""
     )
     period = html.escape(period_display())
+    from dashboards.chart_help import HELP
+
+    title_tip = _info_tip_html(help) if help else ""
 
     col_main, col_btn = st.columns([9, 3], gap="small", vertical_alignment="top")
     with col_main:
         st.markdown(
             f'<div class="page-hero">{breadcrumb}'
-            f'<h1 class="page-hero-title">{html.escape(heading)}{badge_html}</h1>'
+            f'<h1 class="page-hero-title">{html.escape(heading)}{badge_html}{title_tip}</h1>'
             f"{sub_html}"
             f'<div class="page-hero-meta">'
             f'<span class="page-context-pill">📅 {period}</span>'
             f'<span class="page-context-hint">Change dates in the sidebar</span>'
+            f"{_info_tip_html(HELP['ctx_period'])}"
             f"</div></div>",
             unsafe_allow_html=True,
         )
@@ -171,7 +257,7 @@ def page_header(
         if st.button(
             "↻ Refresh data",
             key=f"refresh_{category}",
-            help="Reload all data (clears the 5-minute cache).",
+            help=HELP["ctx_refresh"],
             use_container_width=True,
         ):
             _refresh_page_data()
@@ -182,13 +268,14 @@ def render_page_toolbar() -> None:
     return
 
 
-def section_header(title: str, hint: str | None = None) -> None:
+def section_header(title: str, hint: str | None = None, *, help: str | None = None) -> None:
+    tip = _info_tip_html(help) if help else ""
     hint_html = (
         f'<p class="section-head-hint">{html.escape(hint)}</p>' if hint else ""
     )
     st.markdown(
         f'<div class="section-head">'
-        f'<p class="section-head-title">{html.escape(title)}</p>'
+        f'<p class="section-head-title">{html.escape(title)}{tip}</p>'
         f"{hint_html}</div>",
         unsafe_allow_html=True,
     )
@@ -212,10 +299,8 @@ def _render_chart_title(title: str, help: str | None = None) -> None:
     st.markdown(
         f'<div class="chart-title-row">'
         f'<strong class="chart-title-text">{html.escape(title)}</strong>'
-        f'<span class="chart-info-tip" tabindex="0">'
-        f'<span class="chart-info-icon">ⓘ</span>'
-        f'<span class="chart-info-popup">{html.escape(help)}</span>'
-        f'</span></div>',
+        f"{_info_tip_html(help)}"
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -244,11 +329,17 @@ def kpi_cards(items: list[dict]) -> None:
                 )
 
 
-def metrics_row(items: list[tuple[str, str, str | None]]) -> None:
-    kpi_cards([
-        {"label": label, "value": value, "delta": delta, "delta_tone": "neutral"}
-        for label, value, delta in items
-    ])
+def metrics_row(items: list) -> None:
+    cards: list[dict] = []
+    for item in items:
+        if isinstance(item, dict):
+            cards.append(item)
+            continue
+        label, value = item[0], item[1]
+        delta = item[2] if len(item) > 2 else None
+        tip = item[3] if len(item) > 3 else None
+        cards.append({"label": label, "value": value, "delta": delta, "help": tip})
+    kpi_cards(cards)
 
 
 def _chart_container(title: str | None, render_fn, *, help: str | None = None) -> None:
@@ -272,14 +363,13 @@ def line_chart(
         return
 
     def _render():
-        data = _drop_blank_categories(_sanitize_chart_df(df, x), x)
+        data = _prepare_chart_df(df, x, y)
         if data.empty:
             show_empty()
             return
-        fig = px.line(data, x=x, y=y, template="plotly_white")
+        fig = px.line(data, x=x, y=y, labels=_chart_labels(x, y), template="plotly_white")
         fig.update_traces(line_color=color, line_width=2.5)
         _apply_plotly_theme(fig)
-        fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
     _chart_container(title, _render, help=help)
@@ -300,19 +390,19 @@ def bar_chart(
         return
 
     def _render():
-        data = _drop_blank_categories(_sanitize_chart_df(df, x, y), x, y)
+        data = _prepare_chart_df(df, x, y)
         if data.empty:
             show_empty()
             return
+        labels = _chart_labels(x, y)
         if orientation == "h":
-            fig = px.bar(data, x=y, y=x, orientation="h", template="plotly_white")
+            fig = px.bar(data, x=y, y=x, orientation="h", labels=labels, template="plotly_white")
             fig.update_yaxes(type="category")
         else:
-            fig = px.bar(data, x=x, y=y, template="plotly_white")
+            fig = px.bar(data, x=x, y=y, labels=labels, template="plotly_white")
             fig.update_xaxes(type="category")
         fig.update_traces(marker_color=color)
         _apply_plotly_theme(fig)
-        fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
     _chart_container(title, _render, help=help)
@@ -331,13 +421,19 @@ def pie_chart(
         return
 
     def _render():
-        data = _drop_blank_categories(_sanitize_chart_df(df, names), names)
+        data = _prepare_chart_df(df, names, values)
         if data.empty:
             show_empty()
             return
-        fig = px.pie(data, names=names, values=values, hole=0.45, template="plotly_white")
+        fig = px.pie(
+            data,
+            names=names,
+            values=values,
+            hole=0.45,
+            labels=_chart_labels(names, values),
+            template="plotly_white",
+        )
         _apply_plotly_theme(fig)
-        fig.update_layout(title=None)
         fig.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig, use_container_width=True)
 
@@ -359,13 +455,20 @@ def area_chart(
 
     def _render():
         cols = [x] + ([color] if color else [])
-        data = _drop_blank_categories(_sanitize_chart_df(df, *cols), *cols)
+        data = _prepare_chart_df(df, *cols, color=color)
         if data.empty:
             show_empty()
             return
-        fig = px.area(data, x=x, y=y, color=color, template="plotly_white")
+        label_cols = cols if color else [x, y]
+        fig = px.area(
+            data,
+            x=x,
+            y=y,
+            color=color,
+            labels=_chart_labels(*label_cols),
+            template="plotly_white",
+        )
         _apply_plotly_theme(fig)
-        fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
     _chart_container(title, _render, help=help)
@@ -373,7 +476,6 @@ def area_chart(
 
 def plotly_figure(fig: go.Figure, *, title: str | None = None, help: str | None = None) -> None:
     _apply_plotly_theme(fig)
-    fig.update_layout(title=None)
     with st.container(border=True):
         if title:
             _render_chart_title(title, help)
@@ -394,14 +496,20 @@ def grouped_bar_chart(
         return
 
     def _render():
-        data = _drop_blank_categories(_sanitize_chart_df(df, x), x)
+        data = _prepare_chart_df(df, x)
         if data.empty:
             show_empty()
             return
-        fig = px.bar(data, x=x, y=y_cols, barmode=barmode, template="plotly_white")
+        fig = px.bar(
+            data,
+            x=x,
+            y=y_cols,
+            barmode=barmode,
+            labels=_chart_labels(x, *y_cols),
+            template="plotly_white",
+        )
         fig.update_xaxes(type="category")
         _apply_plotly_theme(fig)
-        fig.update_layout(title=None)
         st.plotly_chart(fig, use_container_width=True)
 
     _chart_container(title, _render, help=help)
@@ -418,8 +526,8 @@ def data_table(
         show_empty()
         return
     with st.container(border=True):
-        if title:
-            _render_chart_title(title, help)
+        if title or help:
+            _render_chart_title(title or "Details", help)
         st.dataframe(
             df,
             use_container_width=True,

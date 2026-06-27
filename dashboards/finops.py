@@ -36,13 +36,13 @@ def render_executive(run_query) -> None:
     tone = "up" if pct > 0 else "down" if pct < 0 else "neutral"
     kpi_cards([
         {"label": "DBU this month", "value": f"{cur:,.1f}", "icon": "📅",
-         "help": "DBU used since the start of the current month."},
+         "help": HELP["kpi_dbu_month"]},
         {"label": "DBU last month", "value": f"{prev:,.1f}", "icon": "📆",
          "delta": f"{pct:+.1f}% vs prior", "delta_tone": tone,
-         "help": "DBU used in the previous full month."},
+         "help": HELP["kpi_dbu_last_month"]},
         {"label": "Potential savings", "value": f"{float(df.iloc[0]['savings_20pct'] or 0):,.1f} DBU",
          "icon": "💡", "delta": "Rough −20% estimate", "delta_tone": "neutral",
-         "help": "Simple estimate if you cut compute waste by 20%."},
+         "help": HELP["kpi_savings_est"]},
     ])
     trend, _ = run_query(f"""
         SELECT usage_date, SUM(usage_quantity) AS daily_dbu
@@ -106,7 +106,7 @@ def render_team_attribution(run_query) -> None:
     with c2:
         env_df = df.groupby("environment", as_index=False)["dbu"].sum() if df is not None and not df.empty else None
         pie_chart(env_df, "environment", "dbu", "By environment", help=HELP["dbu_by_env"])
-    data_table(df)
+    data_table(df, title="Team attribution detail", help=HELP["tbl_team_attribution"])
 
 
 def render_monthly_comparison(run_query) -> None:
@@ -120,7 +120,7 @@ def render_monthly_comparison(run_query) -> None:
     if show_error(err):
         return
     bar_chart(df, "month", "dbu", "Monthly DBU", help=HELP["monthly_dbu"])
-    data_table(df)
+    data_table(df, title="Monthly DBU detail", help=HELP["tbl_monthly_dbu"])
 
 
 def render_list_prices(run_query) -> None:
@@ -140,7 +140,7 @@ def render_list_prices(run_query) -> None:
     with c1:
         bar_chart(df, "sku_name", "total_dbu", "DBU by SKU", orientation="h", help=HELP["dbu_by_sku"])
     with c2:
-        data_table(prices)
+        data_table(prices, title="List prices", help=HELP["tbl_list_prices"])
 
 
 def render_storage_network(run_query) -> None:
@@ -162,11 +162,9 @@ def render_top_consumers(run_query) -> None:
     tabs = st.tabs(["Clusters", "Jobs", "Warehouses", "Users"])
     with tabs[0]:
         df, err = run_query(f"""
-            SELECT COALESCE(c.cluster_name, b.cluster_id) AS cluster_name,
-                   SUM(b.usage_quantity) AS dbu
-            FROM billing_usage_full b
-            LEFT JOIN compute_clusters_parsed c ON b.cluster_id = c.cluster_id
-            WHERE b.cluster_id IS NOT NULL AND {f_usage_date('b.usage_date')}
+            SELECT cluster_name, SUM(usage_quantity) AS dbu
+            FROM billing_usage_full
+            WHERE cluster_id IS NOT NULL AND {f_usage_date()}
             GROUP BY 1 ORDER BY dbu DESC LIMIT 15
         """)
         if not show_error(err):
@@ -175,18 +173,18 @@ def render_top_consumers(run_query) -> None:
         df, _ = run_query(f"""
             SELECT job_name, SUM(usage_quantity) AS dbu
             FROM billing_usage_full
-            WHERE job_name IS NOT NULL AND {f_usage_date()}
+            WHERE job_id IS NOT NULL AND {f_usage_date()}
             GROUP BY 1 ORDER BY dbu DESC LIMIT 15
         """)
         bar_chart(df, "job_name", "dbu", "Top jobs", orientation="h", help=HELP["top_jobs"])
     with tabs[2]:
         df, _ = run_query(f"""
-            SELECT warehouse_id, SUM(usage_quantity) AS dbu
+            SELECT warehouse_name, SUM(usage_quantity) AS dbu
             FROM billing_usage_full
             WHERE warehouse_id IS NOT NULL AND {f_usage_date()}
             GROUP BY 1 ORDER BY dbu DESC LIMIT 15
         """)
-        bar_chart(df, "warehouse_id", "dbu", "Top warehouses", orientation="h", help=HELP["top_warehouses"])
+        bar_chart(df, "warehouse_name", "dbu", "Top warehouses", orientation="h", help=HELP["top_warehouses"])
     with tabs[3]:
         df, _ = run_query(f"""
             SELECT run_as, SUM(usage_quantity) AS dbu

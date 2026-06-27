@@ -22,16 +22,19 @@ from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period
 def render_ghost_clusters(run_query) -> None:
     page_header("Weekend clusters", "Clusters active on Sat/Sun — likely waste")
     df, err = run_query(f"""
-        SELECT cluster_id, SUM(usage_quantity) AS weekend_dbu
-        FROM billing_usage_full
-        WHERE (CAST(strftime('%w', usage_date) AS INTEGER) + 1) IN (1, 7)
-          AND {f_usage_date()}
-          AND cluster_id IS NOT NULL
+        SELECT COALESCE(c.cluster_name,
+               CONCAT('Cluster ', SUBSTRING(b.cluster_id, 1, 8))) AS cluster_name,
+               SUM(b.usage_quantity) AS weekend_dbu
+        FROM billing_usage_full b
+        LEFT JOIN compute_clusters_parsed c ON b.cluster_id = c.cluster_id
+        WHERE (CAST(strftime('%w', b.usage_date) AS INTEGER) + 1) IN (1, 7)
+          AND {f_usage_date('b.usage_date')}
+          AND b.cluster_id IS NOT NULL
         GROUP BY 1 ORDER BY weekend_dbu DESC LIMIT 15
     """)
     if show_error(err):
         return
-    bar_chart(df, "cluster_id", "weekend_dbu", "Weekend DBU by cluster", COLORS["danger"], help=HELP["weekend_cluster_dbu"])
+    bar_chart(df, "cluster_name", "weekend_dbu", "Weekend DBU by cluster", COLORS["danger"], help=HELP["weekend_cluster_dbu"])
     joined, _ = run_query(f"""
         SELECT c.cluster_name, c.auto_termination_minutes, b.weekend_dbu
         FROM (
@@ -45,7 +48,7 @@ def render_ghost_clusters(run_query) -> None:
         JOIN compute_clusters_parsed c ON b.cluster_id = c.cluster_id
         ORDER BY b.weekend_dbu DESC LIMIT 15
     """)
-    data_table(joined)
+    data_table(joined, title="Weekend cluster details", help=HELP["tbl_weekend_clusters"])
 
 
 def render_wall_of_shame(run_query) -> None:
@@ -60,7 +63,7 @@ def render_wall_of_shame(run_query) -> None:
     """)
     if show_error(err):
         return
-    data_table(df, height=500)
+    data_table(df, height=500, title="Slowest queries", help=HELP["tbl_slow_sql"])
 
 
 def render_spill_analysis(run_query) -> None:
@@ -80,10 +83,7 @@ def render_spill_analysis(run_query) -> None:
         df["spill_gb"] = df["spilled_local_bytes"] / 1e9
         df["query_label"] = df["query_preview"].astype(str).str.slice(0, 45)
         bar_chart(df.head(15), "query_label", "spill_gb", "Top spill (GB)", orientation="h", help=HELP["query_spill"])
-    data_table(df)
-
-
-def render_autotermination(run_query) -> None:
+    data_table(df, title="Spill query details", help=HELP["tbl_spill_queries"])
     page_header("Auto-stop", "Clusters without auto-termination may waste money")
     df, err = run_query("""
         SELECT cluster_name, auto_termination_minutes, team, worker_count,
@@ -96,30 +96,32 @@ def render_autotermination(run_query) -> None:
     if df is not None and not df.empty:
         at_risk = len(df[df["auto_termination_minutes"] == 0])
         metrics_row([
-            ("Total clusters", str(len(df)), None),
-            ("No auto-stop", str(at_risk), None),
-            ("Auto-stop ≤20 min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None),
+            ("Total clusters", str(len(df)), None, HELP["kpi_autostop_total"]),
+            ("No auto-stop", str(at_risk), None, HELP["kpi_autostop_none"]),
+            ("Auto-stop ≤20 min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None, HELP["kpi_autostop_short"]),
         ])
-    data_table(df)
+    data_table(df, title="Auto-termination settings", help=HELP["tbl_autostop"])
 
 
 def render_node_utilization(run_query) -> None:
     page_header("Node usage", "CPU and memory per cluster")
     df, err = run_query("""
-        SELECT cluster_id,
-               ROUND(AVG(cpu_user_percent + cpu_system_percent), 1) AS avg_cpu,
-               ROUND(AVG(mem_used_percent), 1) AS avg_mem,
+        SELECT COALESCE(c.cluster_name,
+               CONCAT('Cluster ', SUBSTRING(n.cluster_id, 1, 8))) AS cluster_name,
+               ROUND(AVG(n.cpu_user_percent + n.cpu_system_percent), 1) AS avg_cpu,
+               ROUND(AVG(n.mem_used_percent), 1) AS avg_mem,
                COUNT(*) AS samples
-        FROM compute_node_timeline
+        FROM compute_node_timeline n
+        LEFT JOIN compute_clusters_parsed c ON n.cluster_id = c.cluster_id
         GROUP BY 1 ORDER BY avg_mem DESC LIMIT 20
     """)
     if show_error(err):
         return
     c1, c2 = st.columns(2)
     with c1:
-        bar_chart(df, "cluster_id", "avg_cpu", "Avg CPU (%)", orientation="h", help=HELP["avg_cpu"])
+        bar_chart(df, "cluster_name", "avg_cpu", "Avg CPU (%)", orientation="h", help=HELP["avg_cpu"])
     with c2:
-        bar_chart(df, "cluster_id", "avg_mem", "Avg memory (%)", COLORS["warning"], orientation="h", help=HELP["avg_memory"])
+        bar_chart(df, "cluster_name", "avg_mem", "Avg memory (%)", COLORS["warning"], orientation="h", help=HELP["avg_memory"])
 
 
 def render_job_failures(run_query) -> None:
@@ -140,7 +142,7 @@ def render_job_failures(run_query) -> None:
         GROUP BY 1 ORDER BY failures DESC LIMIT 15
     """)
     bar_chart(failed, "job_name", "failures", "Most failed jobs", COLORS["danger"], orientation="h", help=HELP["top_failed_jobs"])
-    data_table(df)
+    data_table(df, title="Job run results", help=HELP["tbl_job_failures"])
 
 
 def render_warehouse_scaling(run_query) -> None:
@@ -206,4 +208,8 @@ def render_remediation(run_query) -> None:
         ("Enable serverless policies", "Cost control", "Easy", "Require CostCenter tags"),
     ])
 
-    st.dataframe(pd.DataFrame(actions, columns=["Action", "Area", "Effort", "Signal"]), use_container_width=True)
+    data_table(
+        pd.DataFrame(actions, columns=["Action", "Area", "Effort", "Signal"]),
+        title="Recommended actions",
+        help=HELP["tbl_action_plan"],
+    )

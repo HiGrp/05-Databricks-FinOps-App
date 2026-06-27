@@ -15,6 +15,7 @@ from dashboards.components import (
     show_error,
     format_int,
     _drop_blank_categories,
+    _prepare_chart_df,
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
@@ -35,10 +36,10 @@ def render_query_performance(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        (f"Queries ({period_label()})", format_int(r["queries"]), None),
-        ("Avg latency", format_int(r["avg_ms"], "ms"), None),
-        ("P95", format_int(r["p95_ms"], "ms"), None),
-        ("Failed", format_int(r["failed"]), None),
+        (f"Queries ({period_label()})", format_int(r["queries"]), None, HELP["kpi_sql_queries"]),
+        ("Avg latency", format_int(r["avg_ms"], "ms"), None, HELP["kpi_sql_avg_latency"]),
+        ("P95", format_int(r["p95_ms"], "ms"), None, HELP["kpi_sql_p95"]),
+        ("Failed", format_int(r["failed"]), None, HELP["kpi_sql_failed"]),
     ])
     daily, _ = run_query(f"""
         SELECT CAST(start_time AS DATE) AS day,
@@ -70,7 +71,7 @@ def render_queue_analysis(run_query) -> None:
           AND {f_ts_date("start_time")}
         ORDER BY waiting_at_capacity_duration_ms DESC LIMIT 20
     """)
-    data_table(top)
+    data_table(top, title="Long queue waits", help=HELP["tbl_queue_waits"])
 
 
 def render_by_user(run_query) -> None:
@@ -104,7 +105,7 @@ def render_statement_types(run_query) -> None:
     if show_error(err):
         return
     if df is not None and not df.empty:
-        data = _drop_blank_categories(_sanitize_chart_df(df, "statement_type", "execution_status"), "statement_type", "execution_status")
+        data = _prepare_chart_df(df, "statement_type", "execution_status")
         fig = px.bar(data, x="statement_type", y="n", color="execution_status", template="plotly_white")
         fig.update_xaxes(type="category")
         plotly_figure(fig, title="Statements by type", help=HELP["statements_by_type"])
@@ -124,10 +125,10 @@ def render_warehouse_activity(run_query) -> None:
             pie_chart(q, "warehouse_name", "queries", "Queries by warehouse", help=HELP["queries_by_warehouse"])
     with c2:
         wh, _ = run_query("""
-            SELECT warehouse_name, warehouse_size, state, enable_serverless_compute
-            FROM compute_warehouses
+            SELECT warehouse_name, warehouse_size, state, warehouse_type
+            FROM compute_warehouses_parsed
         """)
-        data_table(wh)
+        data_table(wh, title="Warehouse settings", help=HELP["tbl_warehouses"])
 
 
 def render_cache_spill(run_query) -> None:
@@ -144,9 +145,9 @@ def render_cache_spill(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        ("Total queries", format_int(r["total"]), None),
-        ("From cache", format_int(r["cached"]), None),
-        ("With spill", format_int(r["spilled"]), None),
+        ("Total queries", format_int(r["total"]), None, HELP["kpi_cache_total"]),
+        ("From cache", format_int(r["cached"]), None, HELP["kpi_cache_hits"]),
+        ("With spill", format_int(r["spilled"]), None, HELP["kpi_cache_spill"]),
     ])
     ratio, _ = run_query(f"""
         SELECT CAST(start_time AS DATE) AS day,

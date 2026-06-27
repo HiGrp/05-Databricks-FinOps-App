@@ -8,6 +8,7 @@ import streamlit as st
 
 from dashboards.catalog_config import render_catalog_filter
 from dashboards.date_filter import render_date_filter, render_workspace_filter
+from dashboards.chart_help import HELP, info_tip_html
 from dashboards.nav import CATEGORIES
 
 _LEGACY_NAV = {
@@ -60,7 +61,11 @@ def render_sidebar(run_query: Callable | None = None) -> str:
         with sb.container(border=True):
             render_workspace_filter(sb, run_query)
 
-    sb.markdown('<p class="nav-section-label">Navigation</p>', unsafe_allow_html=True)
+    sb.markdown(
+        f'<div class="nav-label-row"><p class="nav-section-label">Navigation</p>'
+        f"{info_tip_html(HELP['filter_nav'])}</div>",
+        unsafe_allow_html=True,
+    )
     for cat_name, cat in CATEGORIES.items():
         is_active = cat_name == st.session_state.nav_category
         label = f"{cat['icon']}  {cat_name}"

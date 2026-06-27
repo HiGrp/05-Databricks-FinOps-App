@@ -3,6 +3,7 @@
 import pandas as pd
 import streamlit as st
 
+from dashboards.chart_help import HELP
 from dashboards.components import data_table, metrics_row, page_header, show_empty
 from dashboards.query_cache import get_cache_key
 from prod_data import (
@@ -30,24 +31,36 @@ def render_api_inventory(run_query) -> None:
         return
 
     metrics_row([
-        ("Clusters", str(len(clusters.get("clusters", []))), None),
-        ("Warehouses", str(len(warehouses.get("warehouses", []))), None),
-        ("Jobs", str(len(jobs.get("jobs", []))), None),
+        ("Clusters", str(len(clusters.get("clusters", []))), None, HELP["kpi_api_clusters"]),
+        ("Warehouses", str(len(warehouses.get("warehouses", []))), None, HELP["kpi_api_warehouses"]),
+        ("Jobs", str(len(jobs.get("jobs", []))), None, HELP["kpi_api_jobs"]),
     ])
 
     tabs = st.tabs(["Clusters", "Warehouses", "Jobs"])
     with tabs[0]:
         df = pd.DataFrame(clusters.get("clusters", []))
-        data_table(df if not df.empty else None)
+        data_table(
+            df if not df.empty else None,
+            title="API clusters",
+            help=HELP["tbl_api_clusters"],
+        )
     with tabs[1]:
         df = pd.DataFrame(warehouses.get("warehouses", []))
-        data_table(df if not df.empty else None)
+        data_table(
+            df if not df.empty else None,
+            title="API warehouses",
+            help=HELP["tbl_api_warehouses"],
+        )
     with tabs[2]:
         rows = [
             {"job_id": j.get("job_id"), "name": (j.get("settings") or {}).get("name", "")}
             for j in jobs.get("jobs", [])
         ]
-        data_table(pd.DataFrame(rows) if rows else None)
+        data_table(
+            pd.DataFrame(rows) if rows else None,
+            title="API jobs",
+            help=HELP["tbl_api_jobs"],
+        )
 
 
 def render_ingestion_health(run_query) -> None:
@@ -68,10 +81,10 @@ def render_ingestion_health(run_query) -> None:
         return
 
     metrics_row([
-        ("Rows", f"{len(df):,}", None),
-        ("Columns", str(len(df.columns)), None),
+        ("Rows", f"{len(df):,}", None, HELP["kpi_ingestion_rows"]),
+        ("Columns", str(len(df.columns)), None, HELP["kpi_ingestion_cols"]),
     ])
-    data_table(df.head(100))
+    data_table(df.head(100), title="Ingestion log", help=HELP["tbl_ingestion_log"])
 
 
 def render_driver_logs(run_query) -> None:
@@ -90,7 +103,11 @@ def _render_driver_logs_prod() -> None:
     if not files:
         st.warning(f"No .log files in {DRIVER_LOG_VOLUME}")
         return
-    selected = st.selectbox("Log file", files)
+    selected = st.selectbox(
+        "Log file",
+        files,
+        help=HELP["tbl_log_file"],
+    )
     with st.spinner("Reading log file..."):
         content = read_driver_log(selected)
     _show_log_content(content)
@@ -101,6 +118,6 @@ def _show_log_content(content: str) -> None:
     st.metric(
         "WARN/ERROR lines",
         len(errors),
-        help="Lines containing WARN, ERROR, or OOM in the log sample.",
+        help=HELP["kpi_log_warnings"],
     )
     st.code(content[:8000], language="log")

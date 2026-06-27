@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from dashboards.chart_help import HELP
+from dashboards.chart_help import CAT_HELP, HELP
 from dashboards.components import (
     bar_chart,
     kpi_cards,
@@ -23,6 +23,7 @@ def render_overview(run_query) -> None:
         category="Home",
         badge="Live",
         icon="📈",
+        help=CAT_HELP["Home"],
     )
 
     kpi_sql = f"""

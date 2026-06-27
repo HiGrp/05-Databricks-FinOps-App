@@ -22,7 +22,7 @@ from dashboards.date_filter import f_workspace
 def render_cluster_inventory(run_query) -> None:
     page_header("Cluster list", f"{fq('compute.clusters')} — current fleet")
     df, err = run_query(f"""
-        SELECT cluster_name, cluster_id, owned_by, worker_count,
+        SELECT cluster_name, owned_by, worker_count,
                driver_node_type, auto_termination_minutes, data_security_mode
         FROM compute_clusters_parsed
         WHERE {f_workspace('workspace_id')}
@@ -31,11 +31,11 @@ def render_cluster_inventory(run_query) -> None:
     if show_error(err):
         return
     metrics_row([
-        ("Clusters", str(len(df) if df is not None else 0), None),
-        ("Photon", str(len(df[df["runtime_engine"] == "PHOTON"]) if df is not None and "runtime_engine" in df.columns else 0), None),
-        ("Single-node", str(len(df[df["worker_count"] == 0]) if df is not None else 0), None),
+        ("Clusters", str(len(df) if df is not None else 0), None, HELP["kpi_clusters_total"]),
+        ("Photon", str(len(df[df["runtime_engine"] == "PHOTON"]) if df is not None and "runtime_engine" in df.columns else 0), None, HELP["kpi_clusters_photon"]),
+        ("Single-node", str(len(df[df["worker_count"] == 0]) if df is not None else 0), None, HELP["kpi_clusters_single"]),
     ])
-    data_table(df)
+    data_table(df, title="Cluster inventory", help=HELP["tbl_cluster_list"])
 
 
 def render_cluster_policies(run_query) -> None:
@@ -86,8 +86,8 @@ def render_cluster_events(run_query) -> None:
         daily = df.copy()
         daily["day"] = pd.to_datetime(daily["timestamp"], errors="coerce").dt.date
         counts = daily.groupby("day", as_index=False).size().rename(columns={"size": "events"})
-        line_chart(counts, "day", "events", "Events per day", help="Daily cluster event count.")
-    data_table(df.head(200))
+        line_chart(counts, "day", "events", "Events per day", help=HELP["cluster_events_daily"])
+    data_table(df.head(200), title="Cluster events", help=HELP["tbl_cluster_events"])
 
 
 def render_runtime_versions(run_query) -> None:

@@ -7,76 +7,199 @@ import re
 from dashboards.catalog_config import get_catalog
 
 
+def _clusters_latest(catalog: str) -> str:
+    return f"""(
+        SELECT cluster_id, cluster_name
+        FROM (
+            SELECT cluster_id, cluster_name,
+                   ROW_NUMBER() OVER (PARTITION BY cluster_id ORDER BY change_time DESC) AS _rn
+            FROM {catalog}.compute.clusters
+        ) WHERE _rn = 1
+    )"""
+
+
+def _warehouses_latest(catalog: str) -> str:
+    return f"""(
+        SELECT warehouse_id, warehouse_name
+        FROM (
+            SELECT warehouse_id, warehouse_name,
+                   ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) AS _rn
+            FROM {catalog}.compute.warehouses
+        ) WHERE _rn = 1
+    )"""
+
+
+def _jobs_latest(catalog: str) -> str:
+    return f"""(
+        SELECT job_id, name AS job_name
+        FROM (
+            SELECT job_id, name,
+                   ROW_NUMBER() OVER (PARTITION BY job_id ORDER BY change_time DESC) AS _rn
+            FROM {catalog}.lakeflow.jobs
+        ) WHERE _rn = 1
+    )"""
+
+
 def _billing_usage_full(catalog: str) -> str:
     return f"""
 SELECT
-    record_id,
-    account_id,
-    workspace_id,
-    sku_name,
-    cloud,
-    usage_start_time,
-    usage_end_time,
-    usage_date,
-    custom_tags,
-    usage_unit,
-    usage_quantity,
-    usage_metadata,
-    identity_metadata,
-    record_type,
-    ingestion_date,
-    billing_origin_product,
-    usage_type,
-    custom_tags['Team'] AS team,
-    custom_tags['Environment'] AS environment,
-    custom_tags['CostCenter'] AS cost_center,
-    custom_tags['Owner'] AS owner,
-    usage_metadata.cluster_id AS cluster_id,
-    usage_metadata.warehouse_id AS warehouse_id,
-    usage_metadata.job_id AS job_id,
-    usage_metadata.job_name AS job_name,
-    usage_metadata.node_type AS node_type,
-    identity_metadata.run_as AS run_as
-FROM {catalog}.billing.usage
+    u.record_id,
+    u.account_id,
+    u.workspace_id,
+    u.sku_name,
+    u.cloud,
+    u.usage_start_time,
+    u.usage_end_time,
+    u.usage_date,
+    u.custom_tags,
+    u.usage_unit,
+    u.usage_quantity,
+    u.usage_metadata,
+    u.identity_metadata,
+    u.record_type,
+    u.ingestion_date,
+    u.billing_origin_product,
+    u.usage_type,
+    u.team,
+    u.environment,
+    u.cost_center,
+    u.owner,
+    u.cluster_id,
+    u.warehouse_id,
+    u.job_id,
+    u.node_type,
+    COALESCE(
+        NULLIF(TRIM(cl.cluster_name), ''),
+        CASE WHEN u.cluster_id IS NOT NULL AND TRIM(u.cluster_id) != ''
+             THEN CONCAT('Cluster ', SUBSTRING(u.cluster_id, 1, 8)) END
+    ) AS cluster_name,
+    COALESCE(
+        NULLIF(TRIM(wh.warehouse_name), ''),
+        CASE WHEN u.warehouse_id IS NOT NULL AND TRIM(u.warehouse_id) != ''
+             THEN CONCAT('Warehouse ', SUBSTRING(u.warehouse_id, 1, 8)) END
+    ) AS warehouse_name,
+    COALESCE(
+        NULLIF(TRIM(u.job_name), ''),
+        NULLIF(TRIM(j.job_name), ''),
+        CASE WHEN u.job_id IS NOT NULL AND TRIM(u.job_id) != ''
+             THEN CONCAT('Job ', SUBSTRING(u.job_id, 1, 8)) END
+    ) AS job_name,
+    CASE
+        WHEN u.run_as LIKE '%@%' THEN u.run_as
+        WHEN NULLIF(TRIM(u.owner), '') IS NOT NULL THEN u.owner
+        WHEN u.run_as IS NOT NULL AND TRIM(u.run_as) != ''
+             THEN CONCAT('Identity ', SUBSTRING(u.run_as, 1, 8))
+        ELSE NULL
+    END AS run_as
+FROM (
+    SELECT
+        record_id,
+        account_id,
+        workspace_id,
+        sku_name,
+        cloud,
+        usage_start_time,
+        usage_end_time,
+        usage_date,
+        custom_tags,
+        usage_unit,
+        usage_quantity,
+        usage_metadata,
+        identity_metadata,
+        record_type,
+        ingestion_date,
+        billing_origin_product,
+        usage_type,
+        custom_tags['Team'] AS team,
+        custom_tags['Environment'] AS environment,
+        custom_tags['CostCenter'] AS cost_center,
+        custom_tags['Owner'] AS owner,
+        usage_metadata.cluster_id AS cluster_id,
+        usage_metadata.warehouse_id AS warehouse_id,
+        usage_metadata.job_id AS job_id,
+        usage_metadata.job_name AS job_name,
+        usage_metadata.node_type AS node_type,
+        identity_metadata.run_as AS run_as
+    FROM {catalog}.billing.usage
+) u
+LEFT JOIN {_clusters_latest(catalog)} cl ON u.cluster_id = cl.cluster_id
+LEFT JOIN {_warehouses_latest(catalog)} wh ON u.warehouse_id = wh.warehouse_id
+LEFT JOIN {_jobs_latest(catalog)} j ON u.job_id = j.job_id
 """
 
 
 def _query_history_full(catalog: str) -> str:
     return f"""
 SELECT
-    account_id,
-    workspace_id,
-    statement_id,
-    session_id,
-    execution_status,
-    compute,
-    executed_by,
-    statement_text,
-    statement_type,
-    error_message,
-    client_application,
-    client_driver,
-    CAST(total_duration_ms AS BIGINT) AS total_duration_ms,
-    CAST(total_duration_ms AS BIGINT) AS duration_ms,
-    CAST(execution_duration_ms AS BIGINT) AS execution_duration_ms,
-    CAST(compilation_duration_ms AS BIGINT) AS compilation_duration_ms,
-    CAST(waiting_at_capacity_duration_ms AS BIGINT) AS waiting_at_capacity_duration_ms,
-    CAST(waiting_for_compute_duration_ms AS BIGINT) AS waiting_for_compute_duration_ms,
-    start_time,
-    end_time,
-    read_rows,
-    produced_rows,
-    read_bytes,
-    written_bytes,
-    spilled_local_bytes,
-    shuffle_read_bytes,
-    from_result_cache,
-    executed_as,
-    compute.warehouse_id AS warehouse_id,
-    NULL AS warehouse_name,
+    q.account_id,
+    q.workspace_id,
+    q.statement_id,
+    q.session_id,
+    q.execution_status,
+    q.compute,
+    COALESCE(NULLIF(TRIM(q.executed_as), ''), NULLIF(TRIM(q.executed_by), '')) AS executed_by,
+    q.statement_text,
+    q.statement_type,
+    q.error_message,
+    q.client_application,
+    q.client_driver,
+    CAST(q.total_duration_ms AS BIGINT) AS total_duration_ms,
+    CAST(q.total_duration_ms AS BIGINT) AS duration_ms,
+    CAST(q.execution_duration_ms AS BIGINT) AS execution_duration_ms,
+    CAST(q.compilation_duration_ms AS BIGINT) AS compilation_duration_ms,
+    CAST(q.waiting_at_capacity_duration_ms AS BIGINT) AS waiting_at_capacity_duration_ms,
+    CAST(q.waiting_for_compute_duration_ms AS BIGINT) AS waiting_for_compute_duration_ms,
+    q.start_time,
+    q.end_time,
+    q.read_rows,
+    q.produced_rows,
+    q.read_bytes,
+    q.written_bytes,
+    q.spilled_local_bytes,
+    q.shuffle_read_bytes,
+    q.from_result_cache,
+    q.executed_as,
+    q.warehouse_id,
+    COALESCE(
+        NULLIF(TRIM(wh.warehouse_name), ''),
+        CASE WHEN q.warehouse_id IS NOT NULL AND TRIM(q.warehouse_id) != ''
+             THEN CONCAT('Warehouse ', SUBSTRING(q.warehouse_id, 1, 8)) END
+    ) AS warehouse_name,
     NULL AS team,
     NULL AS workload
-FROM {catalog}.query.history
+FROM (
+    SELECT
+        account_id,
+        workspace_id,
+        statement_id,
+        session_id,
+        execution_status,
+        compute,
+        executed_by,
+        statement_text,
+        statement_type,
+        error_message,
+        client_application,
+        client_driver,
+        total_duration_ms,
+        execution_duration_ms,
+        compilation_duration_ms,
+        waiting_at_capacity_duration_ms,
+        waiting_for_compute_duration_ms,
+        start_time,
+        end_time,
+        read_rows,
+        produced_rows,
+        read_bytes,
+        written_bytes,
+        spilled_local_bytes,
+        shuffle_read_bytes,
+        from_result_cache,
+        executed_as,
+        compute.warehouse_id AS warehouse_id
+    FROM {catalog}.query.history
+) q
+LEFT JOIN {_warehouses_latest(catalog)} wh ON q.warehouse_id = wh.warehouse_id
 """
 
 
@@ -141,16 +264,22 @@ FROM (
 def _job_run_timeline_parsed(catalog: str) -> str:
     return f"""
 SELECT
-    *,
-    period_start_time AS start_ts,
-    period_end_time   AS end_ts,
-    run_name          AS job_name,
-    (UNIX_TIMESTAMP(period_end_time) - UNIX_TIMESTAMP(period_start_time)) * 1000
+    t.*,
+    t.period_start_time AS start_ts,
+    t.period_end_time   AS end_ts,
+    COALESCE(
+        NULLIF(TRIM(t.run_name), ''),
+        NULLIF(TRIM(j.job_name), ''),
+        CASE WHEN t.job_id IS NOT NULL AND TRIM(t.job_id) != ''
+             THEN CONCAT('Job ', SUBSTRING(t.job_id, 1, 8)) END
+    ) AS job_name,
+    (UNIX_TIMESTAMP(t.period_end_time) - UNIX_TIMESTAMP(t.period_start_time)) * 1000
                       AS run_duration_ms,
     CAST(NULL AS BIGINT) AS queue_duration_ms,
     CAST(NULL AS BIGINT) AS execution_duration_ms,
     NULL AS team
-FROM {catalog}.lakeflow.job_run_timeline
+FROM {catalog}.lakeflow.job_run_timeline t
+LEFT JOIN {_jobs_latest(catalog)} j ON t.job_id = j.job_id
 """
 
 
@@ -165,6 +294,21 @@ FROM {catalog}.lakeflow.job_task_run_timeline
 """
 
 
+def _compute_warehouses_parsed(catalog: str) -> str:
+    return f"""
+SELECT
+    warehouse_id, warehouse_name, warehouse_size, state,
+    workspace_id, warehouse_type
+FROM (
+    SELECT
+        warehouse_id, warehouse_name, warehouse_size, state,
+        workspace_id, warehouse_type,
+        ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) AS _rn
+    FROM {catalog}.compute.warehouses
+) WHERE _rn = 1
+"""
+
+
 def _enriched_views(catalog: str) -> dict[str, str]:
     return {
         "billing_usage_full": _billing_usage_full(catalog),
@@ -172,6 +316,7 @@ def _enriched_views(catalog: str) -> dict[str, str]:
         "query_history": _query_history(catalog),
         "access_audit_parsed": _access_audit_parsed(catalog),
         "compute_clusters_parsed": _compute_clusters_parsed(catalog),
+        "compute_warehouses_parsed": _compute_warehouses_parsed(catalog),
         "job_run_timeline_parsed": _job_run_timeline_parsed(catalog),
         "job_tasks_parsed": _job_tasks_parsed(catalog),
     }

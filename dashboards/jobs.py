@@ -15,6 +15,7 @@ from dashboards.components import (
     int_or_zero,
     COLORS,
     _drop_blank_categories,
+    _prepare_chart_df,
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
@@ -41,10 +42,10 @@ def render_runs_overview(run_query) -> None:
     if avg_min != avg_min:  # NaN
         avg_min = None
     metrics_row([
-        (f"Runs ({period_label()})", f"{total:,}", None),
-        ("Success", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—"),
-        ("Failed", f"{ko:,}", None),
-        ("Avg duration", f"{avg_min} min" if avg_min is not None else "—", None),
+        (f"Runs ({period_label()})", f"{total:,}", None, HELP["kpi_job_runs"]),
+        ("Success", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—", HELP["kpi_job_success"]),
+        ("Failed", f"{ko:,}", None, HELP["kpi_job_failed"]),
+        ("Avg duration", f"{avg_min} min" if avg_min is not None else "—", None, HELP["kpi_job_avg_duration"]),
     ])
     daily, _ = run_query(f"""
         SELECT CAST(start_ts AS DATE) AS day, COUNT(*) AS runs
@@ -72,7 +73,7 @@ def render_success_rates(run_query) -> None:
         df, "job_name", "success_pct", "Success rate (%) — fix low bars first",
         COLORS["success"], orientation="h", help=HELP["success_rate"],
     )
-    data_table(df)
+    data_table(df, title="Success rate by job", help=HELP["tbl_job_success"])
 
 
 def render_durations_queues(run_query) -> None:
@@ -108,10 +109,10 @@ def render_task_breakdown(run_query) -> None:
     if show_error(err):
         return
     if df is not None and not df.empty:
-        data = _drop_blank_categories(_sanitize_chart_df(df, "task_type", "result_state"), "task_type", "result_state")
+        data = _prepare_chart_df(df, "task_type", "result_state")
         fig = px.sunburst(data, path=["task_type", "result_state"], values="tasks", template="plotly_white")
         plotly_figure(fig, title="Task breakdown", help=HELP["tasks_hierarchy"])
-    data_table(df.head(50) if df is not None else None)
+    data_table(df.head(50) if df is not None else None, title="Task breakdown", help=HELP["tbl_job_tasks"])
 
 
 def render_runs_by_team(run_query) -> None:
@@ -125,7 +126,7 @@ def render_runs_by_team(run_query) -> None:
     if show_error(err):
         return
     if df is not None and not df.empty:
-        data = _drop_blank_categories(_sanitize_chart_df(df, "team", "result_state"), "team", "result_state")
+        data = _prepare_chart_df(df, "team", "result_state")
         fig = px.bar(data, x="team", y="runs", color="result_state", template="plotly_white")
         fig.update_xaxes(type="category")
         plotly_figure(fig, title="Runs by team", help=HELP["runs_by_team"])
