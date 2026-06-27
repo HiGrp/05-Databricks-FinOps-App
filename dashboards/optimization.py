@@ -13,8 +13,8 @@ from dashboards.components import (
     plotly_figure,
     show_error,
     COLORS,
-    _drop_blank_categories,
-    _sanitize_chart_df,
+    _chart_labels,
+    _prepare_chart_df,
 )
 from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period_label
 
@@ -84,6 +84,9 @@ def render_spill_analysis(run_query) -> None:
         df["query_label"] = df["query_preview"].astype(str).str.slice(0, 45)
         bar_chart(df.head(15), "query_label", "spill_gb", "Top spill (GB)", orientation="h", help=HELP["query_spill"])
     data_table(df, title="Spill query details", help=HELP["tbl_spill_queries"])
+
+
+def render_autotermination(run_query) -> None:
     page_header("Auto-stop", "Clusters without auto-termination may waste money")
     df, err = run_query("""
         SELECT cluster_name, auto_termination_minutes, team, worker_count,
@@ -163,8 +166,15 @@ def render_warehouse_scaling(run_query) -> None:
         GROUP BY 1, 2 ORDER BY 1
     """)
     if timeline is not None and not timeline.empty:
-        data = _drop_blank_categories(_sanitize_chart_df(timeline, "event_type", "day"), "event_type")
-        fig = px.bar(data, x="day", y="n", color="event_type", template="plotly_white")
+        data = _prepare_chart_df(timeline, "day", "n", color="event_type")
+        fig = px.bar(
+            data,
+            x="day",
+            y="n",
+            color="event_type",
+            labels=_chart_labels("day", "n", "event_type"),
+            template="plotly_white",
+        )
         fig.update_xaxes(type="category")
         plotly_figure(fig, title="Warehouse events over time", help=HELP["warehouse_event_timeline"])
 

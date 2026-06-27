@@ -19,12 +19,6 @@ from dashboards.chart_help import CAT_HELP, HELP
 from dashboards.components import page_header, section_header
 
 
-def _render_section(title: str, subtitle: str, render_fn, run_query, *, help: str | None = None) -> None:
-    section_header(title, subtitle, help=help)
-    with st.spinner(f"Loading {title}..."):
-        render_fn(run_query)
-
-
 def _run_sections(
     category: str,
     icon: str,
@@ -42,25 +36,35 @@ def _run_sections(
         help=CAT_HELP.get(category),
     )
 
+    summary_pending = None
     if summary_fn is not None:
         section_header("Summary", "Key metrics at a glance", help=HELP["sec_summary"])
-        with st.spinner("Loading summary..."):
-            summary_fn(run_query)
+        summary_pending = st.status("Loading summary…", expanded=True)
         st.divider()
 
+    # Phase 1 — draw every section title + waiting indicator at once
+    pending: list[tuple] = []
+    for entry in sections:
+        sec_icon, title, subtitle, render_fn = entry[:4]
+        sec_help = entry[4] if len(entry) > 4 else None
+        full_title = f"{sec_icon} {title}".strip()
+        st.divider()
+        section_header(full_title, subtitle, help=sec_help)
+        status = st.status(f"Loading {full_title}…", expanded=True)
+        pending.append((status, render_fn, full_title))
+
+    # Phase 2 — fill sections (SQL still runs one after another; cache helps)
     st.session_state["_suppress_page_header"] = True
     try:
-        for entry in sections:
-            sec_icon, title, subtitle, render_fn = entry[:4]
-            sec_help = entry[4] if len(entry) > 4 else None
-            st.divider()
-            _render_section(
-                f"{sec_icon} {title}".strip(),
-                subtitle,
-                render_fn,
-                run_query,
-                help=sec_help,
-            )
+        if summary_pending is not None:
+            with summary_pending:
+                summary_fn(run_query)
+            summary_pending.update(label="Summary", state="complete", expanded=False)
+
+        for status, render_fn, full_title in pending:
+            with status:
+                render_fn(run_query)
+            status.update(label=full_title, state="complete", expanded=False)
     finally:
         st.session_state["_suppress_page_header"] = False
 

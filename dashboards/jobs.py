@@ -15,6 +15,7 @@ from dashboards.components import (
     int_or_zero,
     COLORS,
     _drop_blank_categories,
+    _chart_labels,
     _prepare_chart_df,
     _sanitize_chart_df,
 )
@@ -110,7 +111,13 @@ def render_task_breakdown(run_query) -> None:
         return
     if df is not None and not df.empty:
         data = _prepare_chart_df(df, "task_type", "result_state")
-        fig = px.sunburst(data, path=["task_type", "result_state"], values="tasks", template="plotly_white")
+        fig = px.sunburst(
+            data,
+            path=["task_type", "result_state"],
+            values="tasks",
+            labels=_chart_labels("task_type", "result_state", "tasks"),
+            template="plotly_white",
+        )
         plotly_figure(fig, title="Task breakdown", help=HELP["tasks_hierarchy"])
     data_table(df.head(50) if df is not None else None, title="Task breakdown", help=HELP["tbl_job_tasks"])
 
@@ -126,7 +133,14 @@ def render_runs_by_team(run_query) -> None:
     if show_error(err):
         return
     if df is not None and not df.empty:
-        data = _prepare_chart_df(df, "team", "result_state")
-        fig = px.bar(data, x="team", y="runs", color="result_state", template="plotly_white")
+        data = _prepare_chart_df(df, "team", "runs", color="result_state")
+        fig = px.bar(
+            data,
+            x="team",
+            y="runs",
+            color="result_state",
+            labels=_chart_labels("team", "runs", "result_state"),
+            template="plotly_white",
+        )
         fig.update_xaxes(type="category")
         plotly_figure(fig, title="Runs by team", help=HELP["runs_by_team"])

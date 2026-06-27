@@ -124,51 +124,99 @@ def _coerce_label(value) -> str:
 
 
 def _chart_labels(*columns: str) -> dict[str, str]:
-    return {col: _FIELD_LABELS.get(col, col.replace("_", " ").title()) for col in columns}
+    """Never use empty strings — Plotly.js shows them as 'undefined'."""
+    return {
+        col: _FIELD_LABELS.get(col, col.replace("_", " ").title())
+        for col in columns
+        if col
+    }
 
 
 def _prepare_chart_df(df: pd.DataFrame, *columns: str, color: str | None = None) -> pd.DataFrame:
-    cols = [c for c in columns if c]
+    dim_cols = [c for c in columns if c]
     if color:
-        cols.append(color)
-    if not cols:
-        return _sanitize_chart_df(df)
-    out = _sanitize_chart_df(df, *cols)
-    return _drop_blank_categories(out, *cols)
+        dim_cols.append(color)
+    out = df.copy()
+    cat_cols = [
+        c for c in dim_cols
+        if c in out.columns
+        and (out[c].dtype == object or pd.api.types.is_string_dtype(out[c]))
+    ]
+    if not cat_cols:
+        return out
+    out = _sanitize_chart_df(out, *cat_cols)
+    return _drop_blank_categories(out, *cat_cols)
 
 
-def _apply_plotly_theme(fig: go.Figure) -> go.Figure:
-    layout = {k: v for k, v in PLOTLY_TEMPLATE["layout"].items() if k not in ("xaxis", "yaxis", "title")}
-    fig.update_layout(**layout)
+def _clean_trace_name(name) -> str:
+    if name is None:
+        return NULL_LABEL
+    text = str(name).strip()
+    if not text or text.lower() in _BLANK_LABELS:
+        return NULL_LABEL
+    return text
+
+
+def _fix_plotly_traces(fig: go.Figure) -> None:
+    for trace in fig.data:
+        trace.name = _clean_trace_name(trace.name)
+        if trace.name == NULL_LABEL:
+            trace.showlegend = False
+
+        ttype = trace.type
+        orient = getattr(trace, "orientation", None)
+        if ttype == "bar":
+            if orient == "h":
+                trace.hovertemplate = "%{y}: %{x:,}<extra></extra>"
+            else:
+                trace.hovertemplate = "%{x}: %{y:,}<extra></extra>"
+        elif ttype in ("scatter", "scattergl") and trace.mode and "lines" in trace.mode:
+            trace.hovertemplate = "%{x}: %{y:,}<extra></extra>"
+        elif ttype == "pie":
+            trace.hovertemplate = "%{label}: %{value:,} (%{percent})<extra></extra>"
+        elif ttype == "heatmap":
+            trace.hovertemplate = "%{x}: %{y}<br>Count: %{z:,}<extra></extra>"
+        elif ttype in ("sunburst", "treemap"):
+            trace.hovertemplate = "%{label}: %{value:,}<extra></extra>"
+
+        if trace.name != NULL_LABEL and trace.hovertemplate and "<extra></extra>" in trace.hovertemplate:
+            trace.hovertemplate = trace.hovertemplate.replace(
+                "<extra></extra>", f"<extra>{trace.name}</extra>"
+            )
+
+    fig.update_traces(hoverlabel=dict(namelength=-1))
+
+
+def _fix_plotly_layout(fig: go.Figure) -> None:
+    """Empty axis/legend titles render as 'undefined' in the Plotly hover bar."""
     fig.update_layout(
         title=None,
         hovermode="closest",
-        legend_title_text=None,
+        legend_title_text=" ",
+        coloraxis_colorbar=dict(title=dict(text=" ")),
     )
     fig.update_xaxes(
-        title=None,
+        title_text=" ",
+        showspikes=False,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
     )
     fig.update_yaxes(
-        title=None,
+        title_text=" ",
+        showspikes=False,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
     )
+
+
+def _apply_plotly_theme(fig: go.Figure) -> go.Figure:
+    layout = {k: v for k, v in PLOTLY_TEMPLATE["layout"].items() if k not in ("xaxis", "yaxis", "title")}
+    fig.update_layout(**layout)
+    _fix_plotly_layout(fig)
     _fix_plotly_traces(fig)
     return fig
-
-
-def _fix_plotly_traces(fig: go.Figure) -> None:
-    for trace in fig.data:
-        name = trace.name
-        if name is None or str(name).strip().lower() in _BLANK_LABELS:
-            trace.name = NULL_LABEL
-            if trace.type in ("bar", "scatter", "pie", "sunburst", "funnelarea", "histogram"):
-                trace.showlegend = False
-    fig.update_traces(hoverlabel=dict(namelength=-1))
 
 
 def _sanitize_chart_df(df: pd.DataFrame, *columns: str) -> pd.DataFrame:

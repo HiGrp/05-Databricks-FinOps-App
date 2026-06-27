@@ -159,9 +159,15 @@ def render_activity_heatmap(run_query) -> None:
     """)
     if show_error(err) or df is None or df.empty:
         return
-    clean = _drop_blank_categories(_sanitize_chart_df(df, "service_name"), "service_name")
+    clean = _prepare_chart_df(df, "service_name", "event_dt")
     pivot = clean.pivot_table(index="service_name", columns="event_dt", values="events", fill_value=0)
     pivot.index = pivot.index.map(_coerce_label)
     pivot.columns = [_coerce_label(c) for c in pivot.columns]
-    fig = px.imshow(pivot, aspect="auto", color_continuous_scale="Blues", template="plotly_white")
+    fig = px.imshow(
+        pivot,
+        aspect="auto",
+        color_continuous_scale="Blues",
+        labels={"x": "Date", "y": "Service", "color": "Events"},
+        template="plotly_white",
+    )
     plotly_figure(fig, title="Audit heatmap", help=HELP["audit_heatmap"])

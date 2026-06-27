@@ -14,6 +14,8 @@ from dashboards.components import (
     plotly_figure,
     show_empty,
     show_error,
+    _chart_labels,
+    _prepare_chart_df,
 )
 from dashboards.catalog_config import fq
 from dashboards.date_filter import f_workspace
@@ -126,7 +128,7 @@ def render_runtime_versions(run_query) -> None:
     """)
     if not show_error(err) and df_rt is not None and not df_rt.empty:
         df_rt["workspace_short"] = df_rt["workspace_short"].fillna("Other")
-        df_rt["workspace_short"] = df_rt["workspace_short"].replace({"-": "Other", "": "Other"})
+        df_rt["workspace_short"] = df_rt["workspace_short"].replace({"-": "Other", "": "Other", "undefined": "Other"})
 
         runtime_order = (
             df_rt.groupby("dbr_version")["nombre"]
@@ -135,14 +137,15 @@ def render_runtime_versions(run_query) -> None:
             .index.tolist()
         )
 
+        chart_df = _prepare_chart_df(df_rt, "dbr_version", "nombre", color="workspace_short")
         fig = px.bar(
-            df_rt,
+            chart_df,
             x="dbr_version",
             y="nombre",
             color="workspace_short",
             template="plotly_white",
             category_orders={"dbr_version": runtime_order},
-            labels={"dbr_version": "", "nombre": "Count", "workspace_short": ""},
+            labels=_chart_labels("dbr_version", "nombre", "workspace_short"),
         )
         fig.update_layout(
             barmode="stack",

@@ -15,6 +15,7 @@ from dashboards.components import (
     show_error,
     format_int,
     _drop_blank_categories,
+    _chart_labels,
     _prepare_chart_df,
     _sanitize_chart_df,
 )
@@ -105,8 +106,15 @@ def render_statement_types(run_query) -> None:
     if show_error(err):
         return
     if df is not None and not df.empty:
-        data = _prepare_chart_df(df, "statement_type", "execution_status")
-        fig = px.bar(data, x="statement_type", y="n", color="execution_status", template="plotly_white")
+        data = _prepare_chart_df(df, "statement_type", "execution_status", "n")
+        fig = px.bar(
+            data,
+            x="statement_type",
+            y="n",
+            color="execution_status",
+            labels=_chart_labels("statement_type", "n", "execution_status"),
+            template="plotly_white",
+        )
         fig.update_xaxes(type="category")
         plotly_figure(fig, title="Statements by type", help=HELP["statements_by_type"])
 
