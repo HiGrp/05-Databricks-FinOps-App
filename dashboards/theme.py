@@ -259,9 +259,10 @@ def inject_theme() -> None:
             border: 1px solid {t["card_border"]} !important;
             color: {t["text_muted"]} !important;
             border-radius: 8px !important;
-            font-weight: 700 !important;
-            font-size: 1.05rem !important;
+            font-weight: 600 !important;
+            font-size: 0.82rem !important;
             min-height: 2.35rem !important;
+            white-space: nowrap !important;
             margin-top: 0.35rem !important;
             box-shadow: none !important;
         }}

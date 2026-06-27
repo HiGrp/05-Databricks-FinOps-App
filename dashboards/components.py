@@ -155,7 +155,7 @@ def page_header(
     )
     period = html.escape(period_display())
 
-    col_main, col_btn = st.columns([11, 1], gap="small", vertical_alignment="top")
+    col_main, col_btn = st.columns([9, 3], gap="small", vertical_alignment="top")
     with col_main:
         st.markdown(
             f'<div class="page-hero">{breadcrumb}'
@@ -169,7 +169,7 @@ def page_header(
         )
     with col_btn:
         if st.button(
-            "↻",
+            "↻ Refresh data",
             key=f"refresh_{category}",
             help="Reload all data (clears the 5-minute cache).",
             use_container_width=True,
