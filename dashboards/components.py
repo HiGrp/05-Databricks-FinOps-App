@@ -169,7 +169,6 @@ def render_page_toolbar() -> None:
             unsafe_allow_html=True,
         )
     with col_btn:
-        st.markdown('<div style="height:0.35rem"></div>', unsafe_allow_html=True)
         if st.button(
             "↻ Refresh",
             key=f"refresh_{category}",
@@ -228,20 +227,19 @@ def kpi_cards(items: list[dict]) -> None:
         cols = st.columns(len(chunk))
         for col, item in zip(cols, chunk):
             with col:
-                with st.container(border=True):
-                    icon = item.get("icon", "")
-                    label = item.get("label", "")
-                    display_label = f"{icon} {label}".strip() if icon else label
-                    delta = item.get("delta")
-                    tone = item.get("delta_tone", "neutral")
-                    delta_color = "inverse" if tone == "up" else "normal"
-                    st.metric(
-                        label=display_label,
-                        value=item.get("value", "—"),
-                        delta=delta,
-                        delta_color=delta_color if delta else "off",
-                        help=item.get("help"),
-                    )
+                icon = item.get("icon", "")
+                label = item.get("label", "")
+                display_label = f"{icon} {label}".strip() if icon else label
+                delta = item.get("delta")
+                tone = item.get("delta_tone", "neutral")
+                delta_color = "inverse" if tone == "up" else "normal"
+                st.metric(
+                    label=display_label,
+                    value=item.get("value", "—"),
+                    delta=delta,
+                    delta_color=delta_color if delta else "off",
+                    help=item.get("help"),
+                )
 
 
 def metrics_row(items: list[tuple[str, str, str | None]]) -> None:

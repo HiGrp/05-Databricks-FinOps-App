@@ -51,10 +51,22 @@ def inject_theme() -> None:
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }}
 
-        #MainMenu, footer, header[data-testid="stHeader"] {{
+        #MainMenu, footer {{
             visibility: hidden;
             height: 0;
-            min-height: 0;
+        }}
+        header[data-testid="stHeader"] {{
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }}
+        [data-testid="stToolbar"] {{
+            display: none !important;
+        }}
+        [data-testid="stAppViewContainer"] > section.main {{
+            padding-top: 0 !important;
         }}
 
         .stApp {{
@@ -65,17 +77,26 @@ def inject_theme() -> None:
         [data-testid="stSidebar"] {{
             background: {t["sidebar_bg"]} !important;
             border-right: 1px solid {t["sidebar_border"]};
-            box-shadow: 1px 0 0 rgba(15, 23, 42, 0.04);
         }}
-        [data-testid="stSidebar"] > div:first-child {{
-            padding-top: 0.65rem !important;
+        [data-testid="stSidebarHeader"],
+        [data-testid="stSidebar"] [data-testid="stLogoSpacer"] {{
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }}
-        [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
-            padding-top: 0.25rem !important;
+        [data-testid="stSidebarCollapseButton"] {{
+            margin-top: 0.15rem !important;
+            margin-bottom: 0 !important;
         }}
+        [data-testid="stSidebar"] > div:first-child,
+        [data-testid="stSidebar"] [data-testid="stSidebarContent"],
+        [data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
         [data-testid="stSidebar"] [data-testid="block-container"] {{
-            padding-top: 0.5rem !important;
-            padding-bottom: 1rem !important;
+            padding-top: 0 !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
         }}
         [data-testid="stSidebar"] hr {{
             border: none;
@@ -86,8 +107,8 @@ def inject_theme() -> None:
 
         /* ── Sidebar brand ── */
         .sidebar-brand {{
-            padding: 0.15rem 0 0.85rem 0;
-            margin-bottom: 0.15rem;
+            padding: 0 0 0.55rem 0;
+            margin: 0 0 0.45rem 0;
             border-bottom: 1px solid {t["sidebar_border"]};
         }}
         .sidebar-brand-row {{
@@ -135,10 +156,11 @@ def inject_theme() -> None:
         }}
         [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
             background: {t["sidebar_surface"]} !important;
-            border-color: {t["sidebar_border"]} !important;
+            border: 1px solid {t["sidebar_border"]} !important;
             border-radius: 10px !important;
-            padding: 0.55rem 0.65rem !important;
-            margin-bottom: 0.45rem;
+            padding: 0.5rem 0.6rem !important;
+            margin-bottom: 0.4rem;
+            box-shadow: none !important;
         }}
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] strong {{
@@ -201,34 +223,44 @@ def inject_theme() -> None:
             cursor: default !important;
         }}
 
-        /* ── Main layout ── */
+        /* ── Main layout (Streamlit 1.38) ── */
+        [data-testid="stAppViewContainer"],
+        [data-testid="stAppViewContainer"] > .main {{
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }}
+        [data-testid="stMainBlockContainer"],
+        section.main .block-container,
         section.main [data-testid="block-container"] {{
-            padding-top: 1.25rem !important;
-            padding-bottom: 2rem !important;
-            max-width: 1320px;
+            padding-top: 0.5rem !important;
+            padding-bottom: 1.25rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100% !important;
         }}
         section.main [data-testid="stVerticalBlockBorderWrapper"] {{
-            background: {t["card_bg"]};
+            background: {t["card_bg"]} !important;
             border: 1px solid {t["card_border"]} !important;
-            border-radius: 12px !important;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-            padding: 0.85rem 1rem !important;
-            overflow: visible !important;
+            border-radius: 10px !important;
+            padding: 0.75rem 0.85rem !important;
+            margin-bottom: 0.35rem;
+            box-shadow: none !important;
+            outline: none !important;
         }}
         section.main hr {{
             border: none;
             border-top: 1px solid {t["card_border"]};
-            margin: 1.25rem 0 !important;
+            margin: 0.85rem 0 !important;
         }}
 
         /* ── Page toolbar ── */
         .page-toolbar-wrap {{
             background: {t["card_bg"]};
             border: 1px solid {t["card_border"]};
-            border-radius: 12px;
-            padding: 0.65rem 0.85rem;
-            margin-bottom: 0.85rem;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            border-radius: 10px;
+            padding: 0.55rem 0.75rem;
+            margin: 0;
+            box-shadow: none;
         }}
         .page-toolbar-meta {{
             display: flex;
@@ -270,10 +302,10 @@ def inject_theme() -> None:
         .page-hero {{
             background: {t["card_bg"]};
             border: 1px solid {t["card_border"]};
-            border-radius: 14px;
-            padding: 1.1rem 1.25rem;
-            margin-bottom: 0.85rem;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin: 0.35rem 0 0.5rem 0;
+            box-shadow: none;
         }}
         .page-hero-breadcrumb {{
             font-size: 0.75rem;
@@ -333,11 +365,17 @@ def inject_theme() -> None:
         }}
 
         /* ── Metrics & charts ── */
-        [data-testid="stMetric"] {{
-            background: {t["sidebar_surface"]};
+        section.main [data-testid="stMetric"] {{
+            background: {t["card_bg"]};
             border: 1px solid {t["card_border"]};
             border-radius: 10px;
-            padding: 0.65rem 0.75rem !important;
+            padding: 0.55rem 0.65rem !important;
+            box-shadow: none;
+        }}
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMetric"] {{
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
         }}
         [data-testid="stMetricLabel"] {{
             font-size: 0.72rem !important;
@@ -429,8 +467,11 @@ def inject_theme() -> None:
         }}
 
         @media (max-width: 768px) {{
+            [data-testid="stMainBlockContainer"],
             section.main [data-testid="block-container"] {{
-                padding-top: 0.75rem !important;
+                padding-left: 0.65rem !important;
+                padding-right: 0.65rem !important;
+                padding-top: 0.35rem !important;
             }}
             div[data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {{
                 flex-wrap: wrap !important;
