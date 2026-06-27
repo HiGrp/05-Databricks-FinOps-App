@@ -1,13 +1,10 @@
 """Home page — global KPIs."""
 
-import streamlit as st
-
-from dashboards.chart_help import CAT_HELP, HELP
+from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     kpi_cards,
     line_chart,
-    page_header,
     pie_chart,
     show_empty,
     show_error,
@@ -16,16 +13,7 @@ from dashboards.components import (
 from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period_label
 
 
-def render_overview(run_query) -> None:
-    page_header(
-        "Overview",
-        "FinOps, optimization, security, compute, jobs, and SQL in one place.",
-        category="Home",
-        badge="Live",
-        icon="📈",
-        help=CAT_HELP["Home"],
-    )
-
+def render_overview_kpis(run_query) -> None:
     kpi_sql = f"""
         SELECT
             (SELECT SUM(usage_quantity) FROM billing_usage_full
@@ -89,6 +77,8 @@ def render_overview(run_query) -> None:
         },
     ])
 
+
+def render_overview_cost(run_query) -> None:
     def left():
         trend, _ = run_query(f"""
             SELECT usage_date, SUM(usage_quantity) AS dbu
@@ -109,6 +99,8 @@ def render_overview(run_query) -> None:
 
     two_column_charts(left, right)
 
+
+def render_overview_activity(run_query) -> None:
     def audit_chart():
         audit, _ = run_query(f"""
             SELECT service_name, COUNT(*) AS events

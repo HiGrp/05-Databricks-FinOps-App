@@ -18,6 +18,16 @@ from dashboards import (
 from dashboards.chart_help import CAT_HELP, HELP
 from dashboards.components import page_header, section_header
 
+_LOADING_HTML = '<p class="section-loading-hint">Loading…</p>'
+
+
+def _section_shell(title: str, subtitle: str, *, help: str | None = None) -> st.empty:
+    """Section title + flat loading line (no fold/unfold)."""
+    section_header(title, subtitle, help=help)
+    slot = st.empty()
+    slot.markdown(_LOADING_HTML, unsafe_allow_html=True)
+    return slot
+
 
 def _run_sections(
     category: str,
@@ -36,41 +46,46 @@ def _run_sections(
         help=CAT_HELP.get(category),
     )
 
-    summary_pending = None
+    summary_slot = None
     if summary_fn is not None:
-        section_header("Summary", "Key metrics at a glance", help=HELP["sec_summary"])
-        summary_pending = st.status("Loading summary…", expanded=True)
         st.divider()
+        summary_slot = _section_shell("Summary", "Key metrics at a glance", help=HELP["sec_summary"])
 
-    # Phase 1 — draw every section title + waiting indicator at once
+    # Phase 1 — all section titles + loading hints visible at once
     pending: list[tuple] = []
     for entry in sections:
         sec_icon, title, subtitle, render_fn = entry[:4]
         sec_help = entry[4] if len(entry) > 4 else None
         full_title = f"{sec_icon} {title}".strip()
         st.divider()
-        section_header(full_title, subtitle, help=sec_help)
-        status = st.status(f"Loading {full_title}…", expanded=True)
-        pending.append((status, render_fn, full_title))
+        pending.append((_section_shell(full_title, subtitle, help=sec_help), render_fn))
 
-    # Phase 2 — fill sections (SQL still runs one after another; cache helps)
+    # Phase 2 — fill each slot (SQL runs sequentially; cache helps on refresh)
     st.session_state["_suppress_page_header"] = True
     try:
-        if summary_pending is not None:
-            with summary_pending:
+        if summary_slot is not None:
+            with summary_slot.container():
                 summary_fn(run_query)
-            summary_pending.update(label="Summary", state="complete", expanded=False)
 
-        for status, render_fn, full_title in pending:
-            with status:
+        for slot, render_fn in pending:
+            with slot.container():
                 render_fn(run_query)
-            status.update(label=full_title, state="complete", expanded=False)
     finally:
         st.session_state["_suppress_page_header"] = False
 
 
 def render_accueil(run_query) -> None:
-    home.render_overview(run_query)
+    _run_sections(
+        "Overview",
+        "📈",
+        "FinOps, optimization, security, compute, jobs, and SQL in one place.",
+        [
+            ("📊", "Key metrics", "DBU, queries, audit, jobs, compute", home.render_overview_kpis, HELP["sec_home_kpis"]),
+            ("💰", "Cost & products", "DBU trend and product mix", home.render_overview_cost, HELP["sec_home_cost"]),
+            ("🔒", "Audit & jobs", "Top services and run status", home.render_overview_activity, HELP["sec_home_activity"]),
+        ],
+        run_query,
+    )
 
 
 def render_finops(run_query) -> None:

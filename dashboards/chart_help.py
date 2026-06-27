@@ -84,6 +84,10 @@ HELP = {
 
     "sec_summary": "Key numbers for this category in the selected date range.",
 
+    "sec_home_kpis": "DBU, SQL queries, audit events, failed jobs, clusters, and warehouses.",
+    "sec_home_cost": "Daily DBU trend and split by Databricks product.",
+    "sec_home_activity": "Top audit services and job run outcomes.",
+
     # ── Charts ──
     "dbu_usage": "Daily Databricks Units (DBU) used. More DBU means higher cost.",
     "product_mix": "Share of DBU by Databricks product (Jobs, SQL, All-Purpose, etc.).",

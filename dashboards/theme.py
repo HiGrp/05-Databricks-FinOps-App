@@ -377,6 +377,12 @@ def inject_theme() -> None:
             color: {t["text_muted"]};
             margin: 0.2rem 0 0 0;
         }}
+        .section-loading-hint {{
+            font-size: 0.82rem;
+            color: {t["text_muted"]};
+            margin: 0.15rem 0 0.65rem 0.75rem;
+            padding: 0;
+        }}
 
         /* ── Metrics & charts ── */
         section.main [data-testid="stMetric"] {{
