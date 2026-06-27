@@ -28,8 +28,6 @@ def _init_nav_state() -> None:
         st.session_state.nav_category = _LEGACY_NAV[st.session_state.nav_category]
     elif st.session_state.nav_category not in CATEGORIES:
         st.session_state.nav_category = "Home"
-    if "load_all_sections" not in st.session_state:
-        st.session_state.load_all_sections = False
     if "data_cache_epoch" not in st.session_state:
         st.session_state.data_cache_epoch = 0
 
@@ -68,12 +66,6 @@ def render_sidebar(run_query: Callable | None = None) -> str:
         bump_cache_epoch()
         st.cache_data.clear()
         st.rerun()
-
-    st.checkbox(
-        "All sections",
-        key="load_all_sections",
-        help="Load every section at once (slower). Off = one section at a time.",
-    )
 
     epoch = st.session_state.get("data_cache_epoch", 0)
     if epoch:

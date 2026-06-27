@@ -1,4 +1,4 @@
-"""Single-page category orchestrator — lazy sections + summary KPIs."""
+"""Single-page category orchestrator — all sections, most relevant first."""
 
 from __future__ import annotations
 
@@ -19,11 +19,6 @@ from dashboards.components import page_header, section_header
 from dashboards.date_filter import period_label
 
 
-def _section_label(sec_icon: str, title: str) -> str:
-    return f"{sec_icon} {title}".strip()
-
-
-@st.fragment
 def _render_section(title: str, subtitle: str, render_fn, run_query) -> None:
     section_header(title, subtitle)
     with st.spinner(f"Loading {title}..."):
@@ -46,41 +41,11 @@ def _run_sections(
             summary_fn(run_query)
         st.divider()
 
-    labels = {_section_label(ic, t): (ic, t, sub, fn) for ic, t, sub, fn in sections}
-    options = list(labels.keys())
-
-    nav_key = f"section_nav_{category}"
-    if nav_key not in st.session_state:
-        st.session_state[nav_key] = options[0]
-
-    load_all = st.session_state.get("load_all_sections", False)
-
-    col_sel, col_mode = st.columns([3, 1])
-    with col_sel:
-        if load_all:
-            st.caption("All sections loaded — scroll down. Turn off **All sections** in the sidebar to load one at a time.")
-        else:
-            st.selectbox(
-                "Section",
-                options,
-                key=nav_key,
-                help="Only the selected section runs SQL queries.",
-            )
-    with col_mode:
-        if st.session_state.get("data_cache_epoch", 0):
-            st.caption(f"Cache refresh #{st.session_state.data_cache_epoch}")
-
     st.session_state["_suppress_page_header"] = True
     try:
-        if load_all:
-            for sec_icon, title, subtitle, render_fn in sections:
-                st.divider()
-                _render_section(f"{sec_icon} {title}".strip(), subtitle, render_fn, run_query)
-        else:
-            selected = st.session_state.get(nav_key, options[0])
-            sec_icon, title, subtitle, render_fn = labels[selected]
+        for sec_icon, title, subtitle, render_fn in sections:
             st.divider()
-            _render_section(_section_label(sec_icon, title), subtitle, render_fn, run_query)
+            _render_section(f"{sec_icon} {title}".strip(), subtitle, render_fn, run_query)
     finally:
         st.session_state["_suppress_page_header"] = False
 
@@ -96,11 +61,11 @@ def render_finops(run_query) -> None:
             ("👔", "Summary", "Monthly DBU vs last month", finops.render_executive),
             ("🔥", "Top spenders", "Clusters, jobs, warehouses, users", finops.render_top_consumers),
             ("📉", "DBU trends", "Daily use by product", finops.render_daily_trends),
-            ("🧩", "SKU mix", "Top billing SKUs", finops.render_sku_breakdown),
             ("👥", "By team", "Cost by team and environment", finops.render_team_attribution),
             ("📅", "Monthly view", "Month-over-month DBU", finops.render_monthly_comparison),
-            ("💵", "List prices", "Usage vs list prices", finops.render_list_prices),
+            ("🧩", "SKU mix", "Top billing SKUs", finops.render_sku_breakdown),
             ("🌐", "Storage & network", "Non-compute usage", finops.render_storage_network),
+            ("💵", "List prices", "Usage vs list prices", finops.render_list_prices),
         ],
         run_query,
         summary_fn=category_summaries.render_finops_summary,
@@ -113,9 +78,9 @@ def render_optimisation(run_query) -> None:
         [
             ("✅", "Action plan", "Priority fixes from signals", optimization.render_remediation),
             ("👻", "Weekend clusters", "Clusters active on weekends", optimization.render_ghost_clusters),
+            ("🛑", "Failed jobs", "Failed or timed-out runs", optimization.render_job_failures),
             ("🐢", "Slow SQL", "Most expensive queries", optimization.render_wall_of_shame),
             ("💾", "Spill", "Queries with high disk spill", optimization.render_spill_analysis),
-            ("🛑", "Failed jobs", "Failed or timed-out runs", optimization.render_job_failures),
             ("⏱️", "Auto-stop", "Cluster auto-termination settings", optimization.render_autotermination),
             ("📊", "Node usage", "CPU and memory per cluster", optimization.render_node_utilization),
             ("📐", "Warehouse scaling", "Scale up/down events", optimization.render_warehouse_scaling),
@@ -131,9 +96,9 @@ def render_securite(run_query) -> None:
         [
             ("📋", "Audit summary", "Event volume and trends", security.render_audit_overview),
             ("🚫", "Access denied", "403 events", security.render_permission_denied),
-            ("🏛️", "Unity Catalog", "UC actions", security.render_unity_catalog),
             ("🎭", "Top users", "Most active users", security.render_top_actors),
             ("🗓️", "Activity heatmap", "Audit by service and date", security.render_activity_heatmap),
+            ("🏛️", "Unity Catalog", "UC actions", security.render_unity_catalog),
             ("🔑", "Secrets & tokens", "Secrets, PAT, IAM events", security.render_secrets_tokens),
             ("🪪", "Sign-in", "Logins and source IP", security.render_authentication),
         ],
@@ -191,8 +156,8 @@ def render_plateforme(run_query) -> None:
     _run_sections(
         "Platform", "🛠️", "API, ingestion, and logs",
         [
-            ("📥", "Ingestion", "Pipeline health", platform.render_ingestion_health),
             ("🔌", "API inventory", "Clusters, warehouses, jobs", platform.render_api_inventory),
+            ("📥", "Ingestion", "Pipeline health", platform.render_ingestion_health),
             ("📜", "Driver logs", "Sample driver logs", platform.render_driver_logs),
         ],
         run_query,
