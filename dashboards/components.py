@@ -188,27 +188,34 @@ def _fix_plotly_traces(fig: go.Figure) -> None:
 
 
 def _fix_plotly_layout(fig: go.Figure) -> None:
-    """Empty axis/legend titles render as 'undefined' in the Plotly hover bar."""
+    """Drop axis titles — chart titles live in Streamlit markdown above the figure."""
     fig.update_layout(
         title=None,
         hovermode="closest",
-        legend_title_text=" ",
-        coloraxis_colorbar=dict(title=dict(text=" ")),
+        legend_title_text=None,
+        xaxis_title=None,
+        yaxis_title=None,
     )
     fig.update_xaxes(
-        title_text=" ",
+        title_text=None,
         showspikes=False,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
     )
     fig.update_yaxes(
-        title_text=" ",
+        title_text=None,
         showspikes=False,
         gridcolor="#F1F5F9",
         linecolor="#E2E8F0",
         zerolinecolor="#F1F5F9",
     )
+    fig.update_coloraxes(colorbar=dict(title=dict(text="")))
+
+
+def _show_plotly_chart(fig: go.Figure) -> None:
+    """theme=None — Streamlit's default plotly theme renders empty axis titles as 'undefined'."""
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def _apply_plotly_theme(fig: go.Figure) -> go.Figure:
@@ -418,7 +425,7 @@ def line_chart(
         fig = px.line(data, x=x, y=y, labels=_chart_labels(x, y), template="plotly_white")
         fig.update_traces(line_color=color, line_width=2.5)
         _apply_plotly_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
     _chart_container(title, _render, help=help)
 
@@ -451,7 +458,7 @@ def bar_chart(
             fig.update_xaxes(type="category")
         fig.update_traces(marker_color=color)
         _apply_plotly_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
     _chart_container(title, _render, help=help)
 
@@ -483,7 +490,7 @@ def pie_chart(
         )
         _apply_plotly_theme(fig)
         fig.update_traces(textposition="inside", textinfo="percent+label")
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
     _chart_container(title, _render, help=help)
 
@@ -517,7 +524,7 @@ def area_chart(
             template="plotly_white",
         )
         _apply_plotly_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
     _chart_container(title, _render, help=help)
 
@@ -527,7 +534,7 @@ def plotly_figure(fig: go.Figure, *, title: str | None = None, help: str | None 
     with st.container(border=True):
         if title:
             _render_chart_title(title, help)
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
 
 def grouped_bar_chart(
@@ -558,7 +565,7 @@ def grouped_bar_chart(
         )
         fig.update_xaxes(type="category")
         _apply_plotly_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        _show_plotly_chart(fig)
 
     _chart_container(title, _render, help=help)
 
