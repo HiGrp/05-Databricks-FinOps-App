@@ -18,11 +18,11 @@ from dashboards import (
 from dashboards.chart_help import CAT_HELP, HELP
 from dashboards.components import page_header, section_header
 
-_LOADING_HTML = '<p class="section-loading-hint">Loading…</p>'
+_LOADING_HTML = '<div class="section-loading-wrap"><div class="section-spinner" role="status"></div></div>'
 
 
 def _section_shell(title: str, subtitle: str, *, help: str | None = None) -> st.empty:
-    """Section title + flat loading line (no fold/unfold)."""
+    """Section title + visible spinner (no fold/unfold)."""
     section_header(title, subtitle, help=help)
     slot = st.empty()
     slot.markdown(_LOADING_HTML, unsafe_allow_html=True)
@@ -65,11 +65,13 @@ def _run_sections(
     try:
         if summary_slot is not None:
             with summary_slot.container():
-                summary_fn(run_query)
+                with st.spinner(""):
+                    summary_fn(run_query)
 
         for slot, render_fn in pending:
             with slot.container():
-                render_fn(run_query)
+                with st.spinner(""):
+                    render_fn(run_query)
     finally:
         st.session_state["_suppress_page_header"] = False
 

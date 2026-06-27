@@ -377,11 +377,22 @@ def inject_theme() -> None:
             color: {t["text_muted"]};
             margin: 0.2rem 0 0 0;
         }}
-        .section-loading-hint {{
-            font-size: 0.82rem;
-            color: {t["text_muted"]};
-            margin: 0.15rem 0 0.65rem 0.75rem;
-            padding: 0;
+        .section-loading-wrap {{
+            display: flex;
+            align-items: center;
+            padding: 0.85rem 0 1rem 0.75rem;
+            min-height: 2.75rem;
+        }}
+        .section-spinner {{
+            width: 1.65rem;
+            height: 1.65rem;
+            border: 3px solid {t["primary_soft"]};
+            border-top-color: {t["primary"]};
+            border-radius: 50%;
+            animation: section-spin 0.7s linear infinite;
+        }}
+        @keyframes section-spin {{
+            to {{ transform: rotate(360deg); }}
         }}
 
         /* ── Metrics & charts ── */
