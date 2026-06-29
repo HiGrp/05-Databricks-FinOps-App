@@ -1,13 +1,14 @@
 import streamlit as st
 
+from dashboards.app_metadata import APP_ICON, APP_NAME
 from dashboards.nav import get_category_meta, get_category_render_fn
 from dashboards.sidebar import render_sidebar
 from dashboards.theme import inject_theme
 from prod_data import execute_sql
 
 st.set_page_config(
-    page_title="Audit Databricks",
-    page_icon="📊",
+    page_title=APP_NAME,
+    page_icon=APP_ICON,
     layout="wide",
     initial_sidebar_state="expanded",
 )

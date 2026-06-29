@@ -1,0 +1,50 @@
+# Marketplace / Provider Console listing metadata (app-level).
+# Individual detections or notebooks are not listed here — see README.md.
+
+name: FinOps Optimizer
+version: "1.0.0"
+short_description: >
+  Track DBU spend and find cost savings on Databricks.
+long_description: >
+  FinOps Optimizer helps platform and FinOps teams monitor Databricks costs,
+  identify waste, and prioritize fixes. Explore DBU trends, top spenders,
+  team chargeback, ghost clusters, failed jobs, slow SQL, and more — built
+  on native system tables, with no data leaving your workspace.
+
+categories:
+  - FinOps
+  - Cost Optimization
+  - Platform Operations
+  - Security
+
+keywords:
+  - FinOps
+  - DBU
+  - cost optimization
+  - billing
+  - chargeback
+  - waste
+  - system tables
+  - Unity Catalog
+  - query history
+  - jobs
+  - SQL warehouse
+  - cost optimization
+
+platform_requirements:
+  - Databricks Premium or Enterprise workspace
+  - System tables enabled on the account
+  - SQL warehouse (serverless recommended)
+  - Unity Catalog (recommended for catalog filter)
+
+installation_notes: |
+  1. Install the app from Marketplace or deploy from the Git repository.
+  2. At install time, bind a SQL warehouse with CAN USE permission.
+  3. Grant the app service principal SELECT on required system tables
+     (billing, access audit, query history, compute, lakeflow).
+  4. Optional: set FINOPS_INGESTION_LOG_TABLE, FINOPS_CLUSTER_EVENTS_TABLE,
+     or FINOPS_DRIVER_LOG_VOLUME for extended Platform and Compute views.
+
+support:
+  documentation: README.md
+  security: SECURITY.md

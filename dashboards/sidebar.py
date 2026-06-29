@@ -6,6 +6,7 @@ from typing import Callable
 
 import streamlit as st
 
+from dashboards.app_metadata import APP_LOGO, APP_NAME, APP_SIDEBAR_TAGLINE
 from dashboards.catalog_config import render_catalog_filter
 from dashboards.date_filter import render_date_filter, render_workspace_filter
 from dashboards.chart_help import HELP, info_tip_html
@@ -37,13 +38,13 @@ def render_sidebar(run_query: Callable | None = None) -> str:
     sb = st.sidebar
 
     sb.markdown(
-        """
+        f"""
         <div class="sidebar-brand">
           <div class="sidebar-brand-row">
-            <div class="brand-logo">A</div>
+            <div class="brand-logo">{APP_LOGO}</div>
             <div>
-              <div class="brand-title">Audit Databricks</div>
-              <div class="brand-sub">Workspace insights</div>
+              <div class="brand-title">{APP_NAME}</div>
+              <div class="brand-sub">{APP_SIDEBAR_TAGLINE}</div>
             </div>
           </div>
         </div>

@@ -1,5 +1,25 @@
-command: [
-  "streamlit", 
-  "run",
-  "app.py"
-]
+command:
+  - streamlit
+  - run
+  - app.py
+
+env:
+  # Bound by the workspace admin at install time (see manifest resource_specs).
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  # Optional — Delta table for ingestion pipeline logs (Platform page).
+  - name: FINOPS_INGESTION_LOG_TABLE
+    value: ""
+  # Optional — Delta table for cluster events (Compute page).
+  - name: FINOPS_CLUSTER_EVENTS_TABLE
+    value: ""
+  # Optional — Unity Catalog volume path for driver logs (Platform page).
+  - name: FINOPS_DRIVER_LOG_VOLUME
+    value: ""
+
+# Scopes required when the app runs SQL on behalf of the signed-in user.
+user_authorization:
+  scopes:
+    - iam.current-user:read
+    - iam.access-control:read
+    - sql

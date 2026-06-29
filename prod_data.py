@@ -206,9 +206,10 @@ def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
 
 
 def _resolve_warehouse_id(w) -> str | None:
-    env_wh = os.environ.get("FINOPS_SQL_WAREHOUSE_ID", "").strip()
-    if env_wh:
-        return env_wh
+    for env_key in ("DATABRICKS_WAREHOUSE_ID", "FINOPS_SQL_WAREHOUSE_ID"):
+        wh = os.environ.get(env_key, "").strip()
+        if wh:
+            return wh
     warehouses = list(w.warehouses.list())
     for wh in warehouses:
         if wh.enable_serverless_compute:
