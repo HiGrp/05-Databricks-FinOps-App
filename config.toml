@@ -1,0 +1,22 @@
+# ============================================================
+# FinOps Optimizer — configuration
+# ============================================================
+# Toutes les valeurs peuvent aussi etre surchargees par variable
+# d'environnement (utile en deploiement Databricks Apps) :
+#   APP_DEV_MODE, APP_LICENSE_ENABLED, APP_TRIAL_DAYS
+# ============================================================
+
+[app]
+# Mode developpement.
+#   true  -> l'app lit des DONNEES FACTICES locales (moteur DuckDB en memoire),
+#            aucune connexion Databricks requise.
+#   false -> l'app interroge Databricks (system tables + API REST) comme en prod.
+dev_mode = true
+
+[license]
+# Active le verrouillage par licence + essai gratuit.
+# Astuce : en mode dev (dev_mode = true) la licence est automatiquement ignoree.
+enabled = true
+
+# Duree de l'essai gratuit, en jours, avant blocage.
+trial_days = 7

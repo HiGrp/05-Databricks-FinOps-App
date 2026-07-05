@@ -8,7 +8,7 @@ import streamlit as st
 
 from dashboards.app_metadata import APP_LOGO, APP_NAME, APP_SIDEBAR_TAGLINE
 from dashboards.catalog_config import render_catalog_filter
-from dashboards.date_filter import render_date_filter, render_workspace_filter
+from dashboards.date_filter import render_date_filter
 from dashboards.chart_help import HELP, info_tip_html
 from dashboards.nav import CATEGORIES
 
@@ -57,10 +57,6 @@ def render_sidebar(run_query: Callable | None = None) -> str:
 
     with sb.container(border=True):
         render_catalog_filter(sb)
-
-    if run_query is not None:
-        with sb.container(border=True):
-            render_workspace_filter(sb, run_query)
 
     sb.markdown(
         f'<div class="nav-label-row"><p class="nav-section-label">Navigation</p>'

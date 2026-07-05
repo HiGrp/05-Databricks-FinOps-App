@@ -99,6 +99,39 @@ def f_ts_date(col: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Période précédente (pour les deltas période-sur-période)
+# ---------------------------------------------------------------------------
+
+def _bounds_prev() -> tuple[str, str]:
+    """Fenêtre de même durée, se terminant la veille du début courant."""
+    init_dates()
+    start = st.session_state.filter_date_start
+    end = st.session_state.filter_date_end
+    span = (end - start).days
+    prev_end = start - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=span)
+    return str(prev_start), str(prev_end)
+
+
+def f_usage_date_prev(col: str = "usage_date") -> str:
+    s, e = _bounds_prev()
+    return f"{col} >= '{s}' AND {col} <= '{e}'"
+
+
+def f_event_date_prev(col: str = "event_dt") -> str:
+    s, e = _bounds_prev()
+    return f"{col} >= '{s}' AND {col} <= '{e}'"
+
+
+def f_ts_date_prev(col: str) -> str:
+    s, e = _bounds_prev()
+    return (
+        f"CAST({col} AS TIMESTAMP) >= TIMESTAMP '{s} 00:00:00' "
+        f"AND CAST({col} AS TIMESTAMP) < TIMESTAMP '{e} 00:00:00' + INTERVAL '1' DAY"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Filtres Trigramme / Environnement (basés sur workspaces_latest)
 # ---------------------------------------------------------------------------
 

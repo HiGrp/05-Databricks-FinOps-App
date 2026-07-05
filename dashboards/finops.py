@@ -1,5 +1,8 @@
 """FinOps dashboards."""
 
+import calendar
+from datetime import date
+
 import streamlit as st
 
 from dashboards.chart_help import HELP
@@ -23,8 +26,7 @@ def render_executive(run_query) -> None:
         SELECT
             SUM(CASE WHEN usage_date >= date_trunc('month', current_date) THEN usage_quantity ELSE 0 END) AS current_month,
             SUM(CASE WHEN usage_date >= date_trunc('month', current_date - INTERVAL 1 MONTH)
-                      AND usage_date < date_trunc('month', current_date) THEN usage_quantity ELSE 0 END) AS last_month,
-            SUM(CASE WHEN usage_date >= date_trunc('month', current_date) THEN usage_quantity ELSE 0 END) * 0.2 AS savings_20pct
+                      AND usage_date < date_trunc('month', current_date) THEN usage_quantity ELSE 0 END) AS last_month
         FROM billing_usage_full
         WHERE sku_name LIKE '%ALL_PURPOSE%' OR sku_name LIKE '%JOBS%' OR sku_name LIKE '%SQL%'
     """
@@ -34,15 +36,22 @@ def render_executive(run_query) -> None:
     cur, prev = float(df.iloc[0]["current_month"] or 0), float(df.iloc[0]["last_month"] or 0)
     pct = ((cur - prev) / prev * 100) if prev else 0
     tone = "up" if pct > 0 else "down" if pct < 0 else "neutral"
+
+    # Linear month-end projection from the run-rate so far (no magic constant).
+    today = date.today()
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+    projected = (cur / today.day * days_in_month) if today.day else cur
+    proj_tone = "up" if projected > prev and prev else "neutral"
+
     kpi_cards([
         {"label": "DBU this month", "value": f"{cur:,.1f}", "icon": "📅",
          "help": HELP["kpi_dbu_month"]},
         {"label": "DBU last month", "value": f"{prev:,.1f}", "icon": "📆",
          "delta": f"{pct:+.1f}% vs prior", "delta_tone": tone,
          "help": HELP["kpi_dbu_last_month"]},
-        {"label": "Potential savings", "value": f"{float(df.iloc[0]['savings_20pct'] or 0):,.1f} DBU",
-         "icon": "💡", "delta": "Rough −20% estimate", "delta_tone": "neutral",
-         "help": HELP["kpi_savings_est"]},
+        {"label": "Projected month-end", "value": f"{projected:,.1f} DBU",
+         "icon": "🔮", "delta": f"day {today.day}/{days_in_month} run-rate", "delta_tone": proj_tone,
+         "help": "Linear projection of this month's DBU based on days elapsed so far."},
     ])
     trend, _ = run_query(f"""
         SELECT usage_date, SUM(usage_quantity) AS daily_dbu
@@ -87,6 +96,24 @@ def render_sku_breakdown(run_query) -> None:
 
 def render_team_attribution(run_query) -> None:
     page_header("By team", "DBU by team, cost center, and environment")
+    tag, _ = run_query(f"""
+        SELECT SUM(usage_quantity) AS total,
+               SUM(CASE WHEN team IS NULL OR TRIM(team) = '' THEN usage_quantity ELSE 0 END) AS untagged
+        FROM billing_usage_full
+        WHERE {f_usage_date()}
+    """)
+    if tag is not None and not tag.empty:
+        total = float(tag.iloc[0]["total"] or 0)
+        untagged = float(tag.iloc[0]["untagged"] or 0)
+        pct = (untagged / total * 100) if total else 0
+        tone = "up" if pct > 0 else "neutral"
+        metrics_row([
+            {"label": "Untagged DBU", "value": f"{pct:.0f}%", "delta": f"{untagged:,.0f} DBU",
+             "delta_tone": tone,
+             "help": "Share of DBU with no Team tag — cannot be charged back."},
+            {"label": "Tagged DBU", "value": f"{100 - pct:.0f}%",
+             "help": "Share of DBU carrying a Team tag."},
+        ])
     df, err = run_query(f"""
         SELECT team, cost_center, environment, SUM(usage_quantity) AS dbu
         FROM billing_usage_full

@@ -1,5 +1,6 @@
 import streamlit as st
 
+from app_config import is_dev_mode, license_enabled
 from dashboards.app_metadata import APP_ICON, APP_NAME
 from dashboards.nav import get_category_meta, get_category_render_fn
 from dashboards.sidebar import render_sidebar
@@ -15,12 +16,24 @@ st.set_page_config(
 
 inject_theme()
 
+# License / trial gate (skipped in dev mode). Blocks the app when the trial has
+# ended and no valid license is installed.
+if license_enabled() and not is_dev_mode():
+    from licensing import render_license_gate
+
+    render_license_gate()
+
 
 def run_query(sql_query: str):
     return execute_sql(sql_query)
 
 
 category = render_sidebar(run_query)
+
+if license_enabled() and not is_dev_mode():
+    from licensing import render_status_sidebar
+
+    render_status_sidebar()
 
 meta = get_category_meta(category)
 st.session_state["nav_category"] = category

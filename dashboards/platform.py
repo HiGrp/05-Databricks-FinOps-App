@@ -30,12 +30,6 @@ def render_api_inventory(run_query) -> None:
         st.error(f"API error: {exc}")
         return
 
-    metrics_row([
-        ("Clusters", str(len(clusters.get("clusters", []))), None, HELP["kpi_api_clusters"]),
-        ("Warehouses", str(len(warehouses.get("warehouses", []))), None, HELP["kpi_api_warehouses"]),
-        ("Jobs", str(len(jobs.get("jobs", []))), None, HELP["kpi_api_jobs"]),
-    ])
-
     tabs = st.tabs(["Clusters", "Warehouses", "Jobs"])
     with tabs[0]:
         df = pd.DataFrame(clusters.get("clusters", []))
@@ -82,7 +76,6 @@ def render_ingestion_health(run_query) -> None:
 
     metrics_row([
         ("Rows", f"{len(df):,}", None, HELP["kpi_ingestion_rows"]),
-        ("Columns", str(len(df.columns)), None, HELP["kpi_ingestion_cols"]),
     ])
     data_table(df.head(100), title="Ingestion log", help=HELP["tbl_ingestion_log"])
 

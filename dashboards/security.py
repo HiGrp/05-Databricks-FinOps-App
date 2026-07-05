@@ -7,12 +7,10 @@ from dashboards.components import (
     bar_chart,
     data_table,
     line_chart,
-    metrics_row,
     page_header,
     pie_chart,
     plotly_figure,
     show_error,
-    format_int,
     COLORS,
     _coerce_label,
     _drop_blank_categories,
@@ -20,32 +18,19 @@ from dashboards.components import (
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
-from dashboards.date_filter import f_event_date, period_label
+from dashboards.date_filter import f_event_date
 
 
 def render_audit_overview(run_query) -> None:
     page_header("Audit summary", f"Event volume from {fq('access.audit')}")
-    df, err = run_query(f"""
-        SELECT COUNT(*) AS total,
-               COUNT(DISTINCT user_email) AS users,
-               SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors
-        FROM access_audit_parsed
-        WHERE {f_event_date()}
-    """)
-    if show_error(err) or df is None or df.empty:
-        return
-    r = df.iloc[0]
-    metrics_row([
-        (f"Events ({period_label()})", format_int(r["total"]), None, HELP["kpi_audit_events"]),
-        ("Unique users", format_int(r["users"]), None, HELP["kpi_audit_users"]),
-        ("Errors (4xx/5xx)", format_int(r["errors"]), None, HELP["kpi_audit_errors"]),
-    ])
-    daily, _ = run_query(f"""
+    daily, err = run_query(f"""
         SELECT event_dt, COUNT(*) AS events
         FROM access_audit_parsed
         WHERE {f_event_date()}
         GROUP BY 1 ORDER BY 1
     """)
+    if show_error(err):
+        return
     line_chart(daily, "event_dt", "events", "Daily audit volume", help=HELP["audit_daily"])
 
 

@@ -158,9 +158,11 @@ def _clean_trace_name(name) -> str:
 
 
 def _fix_plotly_traces(fig: go.Figure) -> None:
+    # Trace types that do not expose a `showlegend` property.
+    _NO_SHOWLEGEND = ("sunburst", "treemap", "icicle")
     for trace in fig.data:
         trace.name = _clean_trace_name(trace.name)
-        if trace.name == NULL_LABEL:
+        if trace.name == NULL_LABEL and trace.type not in _NO_SHOWLEGEND:
             trace.showlegend = False
 
         ttype = trace.type
@@ -374,7 +376,12 @@ def kpi_cards(items: list[dict]) -> None:
                 display_label = f"{icon} {label}".strip() if icon else label
                 delta = item.get("delta")
                 tone = item.get("delta_tone", "neutral")
-                delta_color = "inverse" if tone == "up" else "normal"
+                if tone == "up":
+                    delta_color = "inverse"
+                elif tone == "off":
+                    delta_color = "off"
+                else:
+                    delta_color = "normal"
                 st.metric(
                     label=display_label,
                     value=item.get("value", "—"),

@@ -20,15 +20,14 @@ from dashboards.components import (
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
-from dashboards.date_filter import f_ts_date, period_label
+from dashboards.date_filter import f_ts_date
 
 
 def render_query_performance(run_query) -> None:
     page_header("Query performance", f"{fq('query.history')} — latency")
     df, err = run_query(f"""
-        SELECT COUNT(*) AS queries,
+        SELECT ROUND(quantile_cont(total_duration_ms, 0.95), 0) AS p95_ms,
                ROUND(AVG(total_duration_ms), 0) AS avg_ms,
-               ROUND(quantile_cont(total_duration_ms, 0.95), 0) AS p95_ms,
                SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed
         FROM query_history_full
         WHERE {f_ts_date("start_time")}
@@ -37,9 +36,8 @@ def render_query_performance(run_query) -> None:
         return
     r = df.iloc[0]
     metrics_row([
-        (f"Queries ({period_label()})", format_int(r["queries"]), None, HELP["kpi_sql_queries"]),
+        ("P95 latency", format_int(r["p95_ms"], "ms"), None, HELP["kpi_sql_p95"]),
         ("Avg latency", format_int(r["avg_ms"], "ms"), None, HELP["kpi_sql_avg_latency"]),
-        ("P95", format_int(r["p95_ms"], "ms"), None, HELP["kpi_sql_p95"]),
         ("Failed", format_int(r["failed"]), None, HELP["kpi_sql_failed"]),
     ])
     daily, _ = run_query(f"""
@@ -54,6 +52,25 @@ def render_query_performance(run_query) -> None:
 
 def render_queue_analysis(run_query) -> None:
     page_header("Queues", "Time waiting for warehouse capacity")
+    q, _ = run_query(f"""
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN waiting_at_capacity_duration_ms > 10000 THEN 1 ELSE 0 END) AS queued,
+               ROUND(AVG(waiting_at_capacity_duration_ms), 0) AS avg_wait
+        FROM query_history_full
+        WHERE {f_ts_date("start_time")}
+    """)
+    if q is not None and not q.empty:
+        total = int(q.iloc[0]["total"] or 0)
+        queued = int(q.iloc[0]["queued"] or 0)
+        pct = (queued / total * 100) if total else 0
+        tone = "up" if pct > 0 else "neutral"
+        metrics_row([
+            {"label": "Queued >10s", "value": f"{pct:.0f}%", "delta": f"{queued:,} queries",
+             "delta_tone": tone,
+             "help": "Share of queries that waited more than 10s for warehouse capacity — sizing signal."},
+            {"label": "Avg queue", "value": format_int(q.iloc[0]["avg_wait"], "ms"),
+             "help": "Average time queued waiting for capacity."},
+        ])
     df, err = run_query(f"""
         SELECT warehouse_name,
                ROUND(AVG(waiting_at_capacity_duration_ms), 0) AS avg_queue_ms,
@@ -140,28 +157,14 @@ def render_warehouse_activity(run_query) -> None:
 
 
 def render_cache_spill(run_query) -> None:
-    page_header("Cache & spill", "Result cache vs disk spill")
-    df, err = run_query(f"""
-        SELECT
-            SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cached,
-            SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled,
-            COUNT(*) AS total
-        FROM query_history_full
-        WHERE {f_ts_date("start_time")}
-    """)
-    if show_error(err) or df is None or df.empty:
-        return
-    r = df.iloc[0]
-    metrics_row([
-        ("Total queries", format_int(r["total"]), None, HELP["kpi_cache_total"]),
-        ("From cache", format_int(r["cached"]), None, HELP["kpi_cache_hits"]),
-        ("With spill", format_int(r["spilled"]), None, HELP["kpi_cache_spill"]),
-    ])
-    ratio, _ = run_query(f"""
+    page_header("Cache & spill", "Result cache hit rate over time")
+    ratio, err = run_query(f"""
         SELECT CAST(start_time AS DATE) AS day,
                ROUND(100.0 * SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) / COUNT(*), 1) AS cache_pct
         FROM query_history_full
         WHERE {f_ts_date("start_time")}
         GROUP BY 1 ORDER BY 1
     """)
+    if show_error(err):
+        return
     line_chart(ratio, "day", "cache_pct", "Cache hit rate (%)", help=HELP["cache_rate"])

@@ -29,6 +29,12 @@ def _sdk_value(value):
 
 
 def fetch_clusters_api() -> dict:
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import fake_clusters_api
+
+        return fake_clusters_api()
     w = _workspace_client()
     clusters = []
     for c in w.clusters.list():
@@ -45,6 +51,12 @@ def fetch_clusters_api() -> dict:
 
 
 def fetch_warehouses_api() -> dict:
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import fake_warehouses_api
+
+        return fake_warehouses_api()
     w = _workspace_client()
     warehouses = []
     for wh in w.warehouses.list():
@@ -61,6 +73,12 @@ def fetch_warehouses_api() -> dict:
 
 
 def fetch_jobs_api() -> dict:
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import fake_jobs_api
+
+        return fake_jobs_api()
     w = _workspace_client()
     jobs = []
     for job in w.jobs.list(expand_tasks=False):
@@ -69,6 +87,12 @@ def fetch_jobs_api() -> dict:
 
 
 def fetch_workspace_status() -> dict:
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import fake_workspace_status
+
+        return fake_workspace_status()
     w = _workspace_client()
     me = w.current_user.me()
     return {
@@ -80,6 +104,12 @@ def fetch_workspace_status() -> dict:
 
 
 def fetch_cluster_events_api(limit_per_cluster: int = 30) -> pd.DataFrame:
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import fake_cluster_events
+
+        return fake_cluster_events()
     if CLUSTER_EVENTS_TABLE:
         return _query_table(CLUSTER_EVENTS_TABLE, limit=500)
 
@@ -197,7 +227,18 @@ def _execute_sql_impl(sql: str) -> tuple[pd.DataFrame | None, str | None]:
 
 
 def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
-    """Execute SQL with 5-minute cache; bust via sidebar Refresh."""
+    """Execute SQL with 5-minute cache; bust via sidebar Refresh.
+
+    In dev mode (config.toml / APP_DEV_MODE) queries run against a local DuckDB
+    loaded with fake data — no Databricks connection required.
+    """
+    from app_config import is_dev_mode
+
+    if is_dev_mode():
+        from dev_data.engine import execute_sql_dev
+
+        return execute_sql_dev(sql)
+
     from dashboards.query_cache import cached_execute, get_cache_key
     from dashboards.sql_tables import adapt_sql_for_databricks
 

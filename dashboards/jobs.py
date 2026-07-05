@@ -8,11 +8,9 @@ from dashboards.components import (
     data_table,
     grouped_bar_chart,
     line_chart,
-    metrics_row,
     page_header,
     plotly_figure,
     show_error,
-    int_or_zero,
     COLORS,
     _drop_blank_categories,
     _chart_labels,
@@ -20,40 +18,19 @@ from dashboards.components import (
     _sanitize_chart_df,
 )
 from dashboards.catalog_config import fq
-from dashboards.date_filter import f_ts_date, period_label
+from dashboards.date_filter import f_ts_date
 
 
 def render_runs_overview(run_query) -> None:
     page_header("Run overview", fq("lakeflow.job_run_timeline"))
-    df, err = run_query(f"""
-        SELECT COUNT(*) AS total,
-               SUM(CASE WHEN result_state = 'SUCCEEDED' THEN 1 ELSE 0 END) AS ok,
-               SUM(CASE WHEN result_state = 'FAILED' THEN 1 ELSE 0 END) AS ko,
-               ROUND(AVG(run_duration_ms)/1000/60, 1) AS avg_min
-        FROM job_run_timeline_parsed
-        WHERE {f_ts_date("start_ts")}
-    """)
-    if show_error(err) or df is None or df.empty:
-        return
-    r = df.iloc[0]
-    total = int_or_zero(r["total"])
-    ok = int_or_zero(r["ok"])
-    ko = int_or_zero(r["ko"])
-    avg_min = r["avg_min"]
-    if avg_min != avg_min:  # NaN
-        avg_min = None
-    metrics_row([
-        (f"Runs ({period_label()})", f"{total:,}", None, HELP["kpi_job_runs"]),
-        ("Success", f"{ok:,}", f"{ok / total * 100:.0f}%" if total else "—", HELP["kpi_job_success"]),
-        ("Failed", f"{ko:,}", None, HELP["kpi_job_failed"]),
-        ("Avg duration", f"{avg_min} min" if avg_min is not None else "—", None, HELP["kpi_job_avg_duration"]),
-    ])
-    daily, _ = run_query(f"""
+    daily, err = run_query(f"""
         SELECT CAST(start_ts AS DATE) AS day, COUNT(*) AS runs
         FROM job_run_timeline_parsed
         WHERE {f_ts_date("start_ts")}
         GROUP BY 1 ORDER BY 1
     """)
+    if show_error(err):
+        return
     line_chart(daily, "day", "runs", "Runs per day", help=HELP["runs_per_day"])
 
 

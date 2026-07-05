@@ -10,7 +10,28 @@ from dashboards.components import (
     show_error,
     two_column_charts,
 )
-from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period_label
+from dashboards.date_filter import (
+    f_event_date,
+    f_event_date_prev,
+    f_ts_date,
+    f_ts_date_prev,
+    f_usage_date,
+    f_usage_date_prev,
+)
+
+
+def _delta(cur, prev, tone: str = "off"):
+    """Return (delta_text, tone) comparing current vs previous period.
+
+    tone="off"  -> neutral grey (informational).
+    tone="up"   -> "inverse" colouring: an increase shows red (cost/reliability).
+    """
+    cur = float(cur or 0)
+    prev = float(prev or 0)
+    if prev <= 0:
+        return None, "off"
+    pct = (cur - prev) / prev * 100
+    return f"{pct:+.0f}% vs prev", tone
 
 
 def render_overview_kpis(run_query) -> None:
@@ -18,13 +39,22 @@ def render_overview_kpis(run_query) -> None:
         SELECT
             (SELECT SUM(usage_quantity) FROM billing_usage_full
              WHERE {f_usage_date()}) AS dbu_period,
+            (SELECT SUM(usage_quantity) FROM billing_usage_full
+             WHERE {f_usage_date_prev()}) AS dbu_prev,
             (SELECT COUNT(*) FROM query_history_full
              WHERE {f_ts_date("start_time")}) AS queries_period,
+            (SELECT COUNT(*) FROM query_history_full
+             WHERE {f_ts_date_prev("start_time")}) AS queries_prev,
             (SELECT COUNT(*) FROM access_audit_parsed
              WHERE {f_event_date()}) AS audit_period,
+            (SELECT COUNT(*) FROM access_audit_parsed
+             WHERE {f_event_date_prev()}) AS audit_prev,
             (SELECT COUNT(*) FROM job_run_timeline_parsed
              WHERE result_state = 'FAILED'
                AND {f_ts_date("start_ts")}) AS failed_jobs_period,
+            (SELECT COUNT(*) FROM job_run_timeline_parsed
+             WHERE result_state = 'FAILED'
+               AND {f_ts_date_prev("start_ts")}) AS failed_jobs_prev,
             (SELECT COUNT(*) FROM compute_clusters_parsed) AS cluster_count,
             (SELECT COUNT(*) FROM compute_warehouses) AS warehouse_count
     """
@@ -33,35 +63,42 @@ def render_overview_kpis(run_query) -> None:
         return
 
     row = df.iloc[0]
-    pl = period_label()
+    dbu_delta, dbu_tone = _delta(row["dbu_period"], row["dbu_prev"], tone="up")
+    q_delta, q_tone = _delta(row["queries_period"], row["queries_prev"])
+    a_delta, a_tone = _delta(row["audit_period"], row["audit_prev"])
+    f_delta, f_tone = _delta(row["failed_jobs_period"], row["failed_jobs_prev"], tone="up")
     kpi_cards([
         {
             "label": "DBU used",
             "value": f"{float(row['dbu_period'] or 0):,.0f}",
             "icon": "💰",
-            "delta": pl,
-            "help": "Total Databricks Units (DBU) in the selected period.",
+            "delta": dbu_delta,
+            "delta_tone": dbu_tone,
+            "help": "Total Databricks Units (DBU) in the period, vs the previous equal-length period.",
         },
         {
             "label": "SQL queries",
             "value": f"{int(row['queries_period'] or 0):,}",
             "icon": "📊",
-            "delta": pl,
-            "help": "Number of SQL queries run in the period.",
+            "delta": q_delta,
+            "delta_tone": q_tone,
+            "help": "Number of SQL queries run in the period, vs the previous period.",
         },
         {
             "label": "Audit events",
             "value": f"{int(row['audit_period'] or 0):,}",
             "icon": "🔒",
-            "delta": pl,
-            "help": "Security and admin actions logged in audit.",
+            "delta": a_delta,
+            "delta_tone": a_tone,
+            "help": "Security and admin actions logged in audit, vs the previous period.",
         },
         {
             "label": "Failed jobs",
             "value": f"{int(row['failed_jobs_period'] or 0):,}",
             "icon": "⚠️",
-            "delta": pl,
-            "help": "Job runs that ended with FAILED status.",
+            "delta": f_delta,
+            "delta_tone": f_tone,
+            "help": "Job runs that ended with FAILED status, vs the previous period.",
         },
         {
             "label": "Clusters",

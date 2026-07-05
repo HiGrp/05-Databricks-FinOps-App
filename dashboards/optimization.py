@@ -21,6 +21,25 @@ from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period
 
 def render_ghost_clusters(run_query) -> None:
     page_header("Weekend clusters", "Clusters active on Sat/Sun — likely waste")
+    wk, _ = run_query(f"""
+        SELECT SUM(usage_quantity) AS total,
+               SUM(CASE WHEN (CAST(strftime('%w', usage_date) AS INTEGER) + 1) IN (1, 7)
+                        THEN usage_quantity ELSE 0 END) AS weekend
+        FROM billing_usage_full
+        WHERE {f_usage_date()}
+    """)
+    if wk is not None and not wk.empty:
+        total = float(wk.iloc[0]["total"] or 0)
+        weekend = float(wk.iloc[0]["weekend"] or 0)
+        pct = (weekend / total * 100) if total else 0
+        tone = "up" if pct > 0 else "neutral"
+        metrics_row([
+            {"label": "Weekend DBU", "value": f"{pct:.0f}%", "delta": f"{weekend:,.0f} DBU",
+             "delta_tone": tone,
+             "help": "Share of DBU consumed on Sat/Sun — typically avoidable waste."},
+            {"label": "Weekday DBU", "value": f"{100 - pct:.0f}%",
+             "help": "Share of DBU consumed Mon–Fri."},
+        ])
     df, err = run_query(f"""
         SELECT COALESCE(c.cluster_name,
                CONCAT('Cluster ', SUBSTRING(b.cluster_id, 1, 8))) AS cluster_name,
@@ -99,7 +118,6 @@ def render_autotermination(run_query) -> None:
     if df is not None and not df.empty:
         at_risk = len(df[df["auto_termination_minutes"] == 0])
         metrics_row([
-            ("Total clusters", str(len(df)), None, HELP["kpi_autostop_total"]),
             ("No auto-stop", str(at_risk), None, HELP["kpi_autostop_none"]),
             ("Auto-stop ≤20 min", str(len(df[(df["auto_termination_minutes"] > 0) & (df["auto_termination_minutes"] <= 20)])), None, HELP["kpi_autostop_short"]),
         ])
@@ -212,11 +230,9 @@ def render_remediation(run_query) -> None:
     if denied is not None and int(denied.iloc[0]["n"] or 0) > 0:
         actions.append(("Review UC permissions", "Governance", "Easy", f"{denied.iloc[0]['n']} denied access"))
 
-    actions.extend([
-        ("Move dev to serverless SQL", "Idle compute", "Medium", "Est. −20% DBU on AP"),
-        ("VACUUM bronze/silver tables", "Storage", "Easy", "7-day retention suggested"),
-        ("Enable serverless policies", "Cost control", "Easy", "Require CostCenter tags"),
-    ])
+    if not actions:
+        st.success("No priority signals detected for the selected period. 🎉")
+        return
 
     data_table(
         pd.DataFrame(actions, columns=["Action", "Area", "Effort", "Signal"]),

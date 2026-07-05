@@ -357,6 +357,14 @@ def _adapt_spark_dialect(sql: str) -> str:
         adapted,
         flags=re.IGNORECASE,
     )
+    # billing.list_prices.pricing is a serialized STRUCT (JSON string); DuckDB reads it
+    # with json_extract_string, Spark with get_json_object.
+    adapted = re.sub(
+        r"\bjson_extract_string\s*\(\s*(.+?)\s*,\s*'(\$[^']*)'\s*\)",
+        r"get_json_object(\1, '\2')",
+        adapted,
+        flags=re.IGNORECASE,
+    )
     adapted = re.sub(
         r"INTERVAL\s+'(\d+)'\s+DAY",
         r"INTERVAL \1 DAY",

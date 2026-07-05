@@ -12,22 +12,29 @@ def _period() -> str:
 
 def render_finops_summary(run_query) -> None:
     df, err = run_query(f"""
-        SELECT SUM(usage_quantity) AS dbu,
-               COUNT(DISTINCT billing_origin_product) AS products,
-               COUNT(DISTINCT sku_name) AS skus
-        FROM billing_usage_full
-        WHERE {f_usage_date()}
+        SELECT
+            (SELECT SUM(usage_quantity) FROM billing_usage_full
+             WHERE {f_usage_date()}) AS dbu,
+            (SELECT COUNT(DISTINCT team) FROM billing_usage_full
+             WHERE {f_usage_date()}) AS teams,
+            (SELECT SUM(u.usage_quantity
+                        * CAST(json_extract_string(p.pricing, '$.default') AS DOUBLE))
+             FROM billing_usage_full u
+             JOIN billing_list_prices p ON u.sku_name = p.sku_name
+             WHERE {f_usage_date('u.usage_date')}) AS cost
     """)
     if show_error(err) or df is None or df.empty:
         return
     r = df.iloc[0]
+    cost = r["cost"]
+    cost_val = f"${float(cost):,.0f}" if cost is not None and cost == cost else "—"
     kpi_cards([
         {"label": "DBU", "value": format_int(r["dbu"]), "icon": "💰", "delta": _period(),
          "help": "Total DBU in the selected period."},
-        {"label": "Products", "value": format_int(r["products"]), "icon": "📦",
-         "help": "Distinct Databricks products with usage."},
-        {"label": "SKUs", "value": format_int(r["skus"]), "icon": "🧩",
-         "help": "Distinct billing SKUs used."},
+        {"label": "Est. cost", "value": cost_val, "icon": "💵",
+         "help": "Estimated cost = usage × SKU list price (USD, list price)."},
+        {"label": "Teams", "value": format_int(r["teams"]), "icon": "👥",
+         "help": "Distinct teams with usage (chargeback scope)."},
     ])
 
 
@@ -36,7 +43,7 @@ def render_optimization_summary(run_query) -> None:
         SELECT
             (SELECT COUNT(DISTINCT cluster_id) FROM billing_usage_full
              WHERE cluster_id IS NOT NULL AND {f_usage_date()}
-               AND dayofweek(usage_date) IN (1, 7)) AS weekend_clusters,
+               AND (CAST(strftime('%w', usage_date) AS INTEGER) + 1) IN (1, 7)) AS weekend_clusters,
             (SELECT COUNT(*) FROM job_run_timeline_parsed
              WHERE result_state = 'FAILED' AND {f_ts_date("start_ts")}) AS failed_jobs,
             (SELECT COUNT(*) FROM query_history_full
@@ -58,8 +65,8 @@ def render_optimization_summary(run_query) -> None:
 def render_security_summary(run_query) -> None:
     df, err = run_query(f"""
         SELECT COUNT(*) AS events,
-               COUNT(DISTINCT user_email) AS users,
-               SUM(CASE WHEN status_code = 403 THEN 1 ELSE 0 END) AS denied
+               SUM(CASE WHEN status_code = 403 THEN 1 ELSE 0 END) AS denied,
+               SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors
         FROM access_audit_parsed
         WHERE {f_event_date()}
     """)
@@ -69,17 +76,17 @@ def render_security_summary(run_query) -> None:
     kpi_cards([
         {"label": "Audit events", "value": format_int(r["events"]), "icon": "📋", "delta": _period(),
          "help": "All audit log events in the period."},
-        {"label": "Users", "value": format_int(r["users"]), "icon": "👤",
-         "help": "Unique users in audit log."},
         {"label": "403 denied", "value": format_int(r["denied"]), "icon": "🚫",
-         "help": "Access denied events."},
+         "help": "Access denied events (HTTP 403)."},
+        {"label": "Errors 4xx/5xx", "value": format_int(r["errors"]), "icon": "⚠️",
+         "help": "All failed audit calls (client + server errors)."},
     ])
 
 
 def render_compute_summary(run_query) -> None:
     df, err = run_query("""
         SELECT COUNT(*) AS clusters,
-               SUM(CASE WHEN auto_termination_minutes = 0 THEN 1 ELSE 0 END) AS no_autostop,
+               SUM(CASE WHEN worker_count = 0 THEN 1 ELSE 0 END) AS single_node,
                COUNT(DISTINCT dbr_version) AS runtimes
         FROM compute_clusters_parsed
     """)
@@ -89,8 +96,8 @@ def render_compute_summary(run_query) -> None:
     kpi_cards([
         {"label": "Clusters", "value": format_int(r["clusters"]), "icon": "🖥️",
          "help": "All-purpose and shared clusters."},
-        {"label": "No auto-stop", "value": format_int(r["no_autostop"]), "icon": "⏱️",
-         "help": "Clusters that never auto-terminate."},
+        {"label": "Single-node", "value": format_int(r["single_node"]), "icon": "🧩",
+         "help": "Clusters running driver-only (zero workers)."},
         {"label": "DBR versions", "value": format_int(r["runtimes"]), "icon": "⚙️",
          "help": "Distinct runtime versions in use."},
     ])
@@ -100,7 +107,7 @@ def render_jobs_summary(run_query) -> None:
     df, err = run_query(f"""
         SELECT COUNT(*) AS runs,
                SUM(CASE WHEN result_state = 'SUCCEEDED' THEN 1 ELSE 0 END) AS ok,
-               SUM(CASE WHEN result_state = 'FAILED' THEN 1 ELSE 0 END) AS failed
+               ROUND(AVG(run_duration_ms) / 1000 / 60, 1) AS avg_min
         FROM job_run_timeline_parsed
         WHERE {f_ts_date("start_ts")}
     """)
@@ -110,13 +117,16 @@ def render_jobs_summary(run_query) -> None:
     total = int_or_zero(r["runs"])
     ok = int_or_zero(r["ok"])
     pct = f"{ok / total * 100:.0f}%" if total else "—"
+    avg_min = r["avg_min"]
+    if avg_min != avg_min:  # NaN
+        avg_min = None
     kpi_cards([
         {"label": "Runs", "value": f"{total:,}", "icon": "🔄", "delta": _period(),
          "help": "Job runs in the period."},
         {"label": "Success rate", "value": pct, "icon": "✅",
          "help": "Share of runs that succeeded."},
-        {"label": "Failed", "value": format_int(r["failed"]), "icon": "❌",
-         "help": "Runs that failed."},
+        {"label": "Avg duration", "value": f"{avg_min} min" if avg_min is not None else "—", "icon": "⏱️",
+         "help": "Average job run duration."},
     ])
 
 

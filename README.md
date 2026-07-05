@@ -49,6 +49,27 @@ streamlit run app.py
 
 Configure `~/.databrickscfg` or set `DATABRICKS_WAREHOUSE_ID` / `FINOPS_SQL_WAREHOUSE_ID` for SQL warehouse access.
 
+### Dev mode (no Databricks needed)
+
+Set `dev_mode = true` in `config.toml` (or `APP_DEV_MODE=1`) to run the whole app
+against **local fake data** served by an in-memory DuckDB engine — no Databricks,
+Docker, or database required. See [`docs/MODE_DEV.md`](docs/MODE_DEV.md).
+
+### Licensing & free trial
+
+The app can run free for a configurable number of days, then lock until a signed
+license key is entered (offline, Ed25519). Configure in `config.toml` under
+`[license]`. Vendor tooling to issue keys is in `tools/license_tool.py`.
+See [`docs/LICENCE.md`](docs/LICENCE.md).
+
+### Distributing without source code
+
+To ship the app without exposing the Python source, obfuscate with PyArmor.
+Step-by-step guide in [`docs/OBFUSCATION.md`](docs/OBFUSCATION.md).
+
+For the full end-to-end packaging + licensing flow for multiple Databricks
+customers, see [`INSTALL.md`](INSTALL.md).
+
 ## System tables used
 
 The app queries Databricks system tables including (non-exhaustive):
@@ -67,12 +88,19 @@ See `dashboards/sql_tables.py` for the full view definitions and catalog adaptat
 ## Repository layout
 
 ```
-app.py                 # Streamlit entry point
+app.py                 # Streamlit entry point (+ license gate)
 app.yaml               # Databricks App runtime config
 manifest.yaml          # Marketplace / app manifest
+config.toml            # dev_mode + license settings
+app_config.py          # Config loader (config.toml + env overrides)
 metadata/meta.yaml     # Listing metadata for Provider Console
 dashboards/            # UI modules (FinOps, Security, etc.)
-prod_data.py           # SQL warehouse & API access
+prod_data.py           # SQL warehouse & API access (routes to dev in dev mode)
+dev_data/              # Local fake-data DuckDB engine (dev mode)
+licensing.py           # Trial + license enforcement (public key only)
+license_public_key.txt # Public key shipped with the app
+tools/                 # Vendor-only license tooling (NOT distributed)
+docs/                  # MODE_DEV / LICENCE / OBFUSCATION guides
 requirements.txt       # Python dependencies
 SECURITY.md            # Vulnerability reporting
 ```

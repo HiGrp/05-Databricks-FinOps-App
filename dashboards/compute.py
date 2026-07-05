@@ -8,7 +8,6 @@ from dashboards.chart_help import HELP
 from dashboards.components import (
     bar_chart,
     data_table,
-    metrics_row,
     page_header,
     pie_chart,
     plotly_figure,
@@ -32,11 +31,6 @@ def render_cluster_inventory(run_query) -> None:
     """)
     if show_error(err):
         return
-    metrics_row([
-        ("Clusters", str(len(df) if df is not None else 0), None, HELP["kpi_clusters_total"]),
-        ("Photon", str(len(df[df["runtime_engine"] == "PHOTON"]) if df is not None and "runtime_engine" in df.columns else 0), None, HELP["kpi_clusters_photon"]),
-        ("Single-node", str(len(df[df["worker_count"] == 0]) if df is not None else 0), None, HELP["kpi_clusters_single"]),
-    ])
     data_table(df, title="Cluster inventory", help=HELP["tbl_cluster_list"])
 
 
