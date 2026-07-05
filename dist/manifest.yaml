@@ -1,0 +1,14 @@
+version: 1
+name: finops-optimizer
+description: >
+  FinOps and cost optimization for Databricks workspaces.
+  Track DBU spend, find waste, and act on savings — powered by system tables.
+
+user_api_scopes:
+  - sql
+
+resource_specs:
+  - name: sql-warehouse
+    description: SQL warehouse used to query Databricks system tables.
+    sql_warehouse_spec:
+      permission: CAN_USE

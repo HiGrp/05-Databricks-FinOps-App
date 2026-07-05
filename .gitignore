@@ -12,6 +12,5 @@ tools/license_private_key.txt
 dev_data/data/
 
 # Obfuscated build output
-dist/
 build/
 .pyarmor/

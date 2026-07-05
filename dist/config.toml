@@ -1,0 +1,6 @@
+[app]
+dev_mode = false
+
+[license]
+enabled = true
+trial_days = 7
