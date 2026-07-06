@@ -76,4 +76,23 @@ def render_sidebar(run_query: Callable | None = None) -> str:
             st.session_state.nav_category = cat_name
             st.rerun()
 
+    _render_support_footer(sb)
+
     return st.session_state.nav_category
+
+
+def _render_support_footer(sb) -> None:
+    """Persistent support contact — visible on every page (license, help, etc.)."""
+    from dashboards.app_metadata import APP_SUPPORT_EMAIL
+
+    mail = APP_SUPPORT_EMAIL
+    sb.markdown(
+        f"""
+        <div class="sidebar-support">
+          <span class="sidebar-support-label">Need help?</span>
+          <a class="sidebar-support-link" href="mailto:{mail}">{mail}</a>
+          <span class="sidebar-support-hint">License · support</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

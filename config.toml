@@ -11,7 +11,7 @@
 #   true  -> l'app lit des DONNEES FACTICES locales (moteur DuckDB en memoire),
 #            aucune connexion Databricks requise.
 #   false -> l'app interroge Databricks (system tables + API REST) comme en prod.
-dev_mode = true
+dev_mode = false
 
 [license]
 # Active le verrouillage par licence + essai gratuit.
@@ -19,4 +19,4 @@ dev_mode = true
 enabled = true
 
 # Duree de l'essai gratuit, en jours, avant blocage.
-trial_days = 7
+trial_days = 1

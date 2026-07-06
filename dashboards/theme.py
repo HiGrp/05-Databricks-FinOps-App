@@ -144,6 +144,36 @@ def inject_theme() -> None:
             font-weight: 500;
         }}
 
+        /* ── Sidebar support footer ── */
+        .sidebar-support {{
+            margin-top: 1.1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid {t["sidebar_border"]};
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }}
+        .sidebar-support-label {{
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: {t["sidebar_muted"]} !important;
+        }}
+        .sidebar-support-link {{
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: {t["primary"]} !important;
+            text-decoration: none;
+        }}
+        .sidebar-support-link:hover {{
+            text-decoration: underline;
+        }}
+        .sidebar-support-hint {{
+            font-size: 0.68rem;
+            color: {t["sidebar_muted"]} !important;
+        }}
+
         /* ── Sidebar filters ── */
         .filter-label, .nav-section-label {{
             font-size: 0.68rem;

@@ -263,6 +263,11 @@ def render_status_sidebar() -> None:
                 st.rerun()
             else:
                 st.error(msg)
+        from dashboards.app_metadata import APP_SUPPORT_EMAIL
+
+        st.caption(
+            f"No key yet? [{APP_SUPPORT_EMAIL}](mailto:{APP_SUPPORT_EMAIL})"
+        )
 
 
 def render_license_gate() -> None:
@@ -276,13 +281,14 @@ def render_license_gate() -> None:
                        "Enter a license key in the sidebar to keep access.")
         return
 
-    from dashboards.app_metadata import APP_ICON, APP_NAME
+    from dashboards.app_metadata import APP_ICON, APP_NAME, APP_SUPPORT_EMAIL
 
     st.markdown(f"## {APP_ICON} {APP_NAME}")
     st.error(status["message"])
     st.markdown(
         "Paste your license key below to unlock the application. "
-        "Need a key? Contact your vendor."
+        f"Need a key? Contact us at "
+        f"[{APP_SUPPORT_EMAIL}](mailto:{APP_SUPPORT_EMAIL})."
     )
     with st.form("license_form", clear_on_submit=False):
         token = st.text_area("License key", height=140, placeholder="eyJ...  .  ...")

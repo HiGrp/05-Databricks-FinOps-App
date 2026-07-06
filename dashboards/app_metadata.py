@@ -11,3 +11,4 @@ APP_DESCRIPTION = (
 APP_VERSION = "1.0.0"
 APP_ICON = "💰"
 APP_LOGO = "FO"
+APP_SUPPORT_EMAIL = "contact@higroup.systems"
