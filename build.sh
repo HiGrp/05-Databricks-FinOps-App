@@ -41,7 +41,9 @@ PY
   find dashboards -name '*.py' ! -name '__init__.py' -delete
   find . -name '*.c' -delete && rm -rf build
   touch .dist_build
-  printf '[app]\ndev_mode = false\n' > config.toml
+  TRIAL_DAYS=$(grep -E '^\s*trial_days\s*=' /src/config.toml 2>/dev/null | grep -o '[0-9]*' | head -1)
+  TRIAL_DAYS=${TRIAL_DAYS:-7}
+  printf '[app]\ndev_mode = false\n\n[license]\ntrial_days = %s\n' "$TRIAL_DAYS" > config.toml
   printf '__pycache__/\n*.pyc\n' > .gitignore
   cp /src/license_public_key.txt . 2>/dev/null || true
 

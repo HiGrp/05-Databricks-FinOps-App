@@ -1,2 +1,5 @@
 [app]
 dev_mode = false
+
+[license]
+trial_days = 7

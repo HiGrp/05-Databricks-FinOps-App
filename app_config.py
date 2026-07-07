@@ -66,7 +66,7 @@ def license_enabled() -> bool:
 
 
 def trial_days() -> int:
-    """Default trial length for ``license_tool issue --trial``."""
+    """Auto-trial length (days) when no license key is installed."""
     raw = os.environ.get("APP_TRIAL_DAYS")
     if raw is not None:
         try:

@@ -74,9 +74,6 @@ def _load_private_key():
 
 
 def cmd_issue(args) -> None:
-    if not args.workspace_id or not str(args.workspace_id).strip():
-        raise SystemExit("--workspace-id is required for all license keys.")
-
     if args.trial and not args.until and not args.months and args.days == 365:
         args.days = trial_days()
 
@@ -93,7 +90,6 @@ def cmd_issue(args) -> None:
         "app": APP_ID,
         "customer": args.customer,
         "plan": plan,
-        "workspace_id": str(args.workspace_id).strip(),
         "iat": date.today().isoformat(),
         "exp": exp.isoformat(),
     }
@@ -118,10 +114,6 @@ def main() -> None:
 
     p_issue = sub.add_parser("issue", help="Issue a signed license key")
     p_issue.add_argument("--customer", required=True, help="Customer / org name")
-    p_issue.add_argument(
-        "--workspace-id", required=True,
-        help="Databricks workspace ID (shown in the app when no key is installed)",
-    )
     p_issue.add_argument("--plan", default="yearly", help="monthly | yearly | custom | trial")
     p_issue.add_argument(
         "--trial", action="store_true",

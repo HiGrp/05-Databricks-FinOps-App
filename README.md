@@ -1,6 +1,6 @@
 # FinOps Optimizer
 
-App Streamlit Databricks (FinOps, system tables). Licence offline liée au workspace.
+App Streamlit Databricks (FinOps, system tables). Licence offline.
 
 ## 1. Dev local
 
@@ -14,9 +14,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Données DuckDB factices, pas de licence.
-
-## 2. Clés licence (une fois)
+## 2. Clés licence (une fois, chez toi)
 
 ```bash
 python tools/license_tool.py keygen
@@ -24,38 +22,38 @@ python tools/license_tool.py keygen
 
 Secret : `tools/license_private_key.txt` — ne jamais committer.
 
-Trial : `config.toml` → `[license] trial_days = 7`
+Durée essai auto (sans clé) : `config.toml` → `[license] trial_days = 7`
 
 ## 3. Build + push client
 
 ```bash
 bash build.sh
+git add .
 git commit -m "Update dist"
 git push
 ```
 
-Produit et stage `dist/` (`.so` Linux + `app.py`). Docker requis.
-
 ## 4. Client déploie
 
-Clone le repo, puis :
-
 ```bash
-databricks sync ./dist /Workspace/Users/<client>/finops-app
+export MSYS_NO_PATHCONV=1
+databricks configure --token   # une fois
+databricks sync ./dist /Users/<email>/finops-app --full
 ```
 
-Databricks App + SQL warehouse. **Pas d'upload UI** (corrompt les `.so`).
+Databricks App + SQL warehouse. Pas d'upload UI.
 
-## 5. Clé pour le client
+## 5. Licence
 
-App bloquée → client t'envoie son **Workspace ID**.
+**Auto :** le client déploie → essai `trial_days` jours, sans clé, sans te contacter.
+
+**Payant :** après l'essai, tu émets une clé :
 
 ```bash
-python tools/license_tool.py issue --customer "Trial X" --trial --workspace-id <ID>
-python tools/license_tool.py issue --customer "ACME" --plan yearly --workspace-id <ID> --days 365
+python tools/license_tool.py issue --customer "ACME" --plan yearly --days 365
 ```
 
-Il colle la clé dans l'app.
+Le client la colle dans la sidebar. Pas de lien workspace.
 
 ## Variables prod (optionnel)
 
