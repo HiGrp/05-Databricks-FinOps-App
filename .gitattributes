@@ -1,0 +1,2 @@
+# Compiled Linux extensions — treat as binary in diffs
+dist/**/*.so binary -diff

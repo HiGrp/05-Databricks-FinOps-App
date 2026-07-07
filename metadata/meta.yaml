@@ -46,4 +46,4 @@ installation_notes: |
      or FINOPS_DRIVER_LOG_VOLUME for extended Platform and Compute views.
 
 support:
-  documentation: docs/README.md
+  documentation: README.md

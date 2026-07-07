@@ -1,21 +1,18 @@
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
 .venv/
 venv/
 
-# Vendor license signing key — NEVER commit
 tools/license_private_key.txt
-
-# Generated fake data dumps (dev mode)
 dev_data/data/
 
-# Cython intermediate build (repo root only — dist/ is committed for clients)
 /build/
 *.c
 /.dist_build
 
-# Legacy
-.pyarmor/
-pyarmor.bug.log
+# track dist/ .so, ignore elsewhere
+*.so
+!dist/
+!dist/**/
+!dist/**/*.so
