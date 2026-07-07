@@ -36,9 +36,11 @@ git push
 ## 4. Client déploie
 
 ```bash
+export DATABRICKS_HOST="https://adb-7405611146197933.13.azuredatabricks.net"
+export DATABRICKS_TOKEN="dapi677c294ebda4035d303a86c136c5dd26-2"
 export MSYS_NO_PATHCONV=1
-databricks configure --token   # une fois
-databricks sync ./dist /Users/<email>/finops-app --full
+
+databricks sync ./dist /Users/issame.hamaoui@hi-group.fr/finops-app --full
 ```
 
 Databricks App + SQL warehouse. Pas d'upload UI.

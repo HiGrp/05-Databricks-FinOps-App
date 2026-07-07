@@ -357,8 +357,13 @@ def _adapt_spark_dialect(sql: str) -> str:
         adapted,
         flags=re.IGNORECASE,
     )
-    # billing.list_prices.pricing is a serialized STRUCT (JSON string); DuckDB reads it
-    # with json_extract_string, Spark with get_json_object.
+    # Databricks list_prices.pricing is a STRUCT; DuckDB dev uses JSON strings.
+    adapted = re.sub(
+        r"\bjson_extract_string\s*\(\s*(.+?)\s*,\s*'\$\.default'\s*\)",
+        r"\1.default",
+        adapted,
+        flags=re.IGNORECASE,
+    )
     adapted = re.sub(
         r"\bjson_extract_string\s*\(\s*(.+?)\s*,\s*'(\$[^']*)'\s*\)",
         r"get_json_object(\1, '\2')",
