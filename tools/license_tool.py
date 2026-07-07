@@ -1,45 +1,46 @@
-"""Vendor-side license tool (KEEP PRIVATE — do not ship with the app).
-
-Generate a signing key pair, then issue signed license keys that the app unlocks
-with its embedded public key.
-
-Usage
------
-Generate a key pair (run once, keep the private key secret)::
-
-    python tools/license_tool.py keygen
-
-    # -> writes tools/license_private_key.txt (SECRET)
-    #    writes license_public_key.txt          (ship this in the app)
-
-Issue a license key::
-
-    python tools/license_tool.py issue --customer "ACME Corp" --plan yearly --days 365
-    python tools/license_tool.py issue --customer "ACME Corp" --plan monthly --months 1
-    python tools/license_tool.py issue --customer "Trial+" --until 2027-01-31
-
-The printed token is what the customer pastes into the app's license screen.
-"""
+"""Vendor-side license tool (KEEP PRIVATE — do not ship with the app)."""
 
 from __future__ import annotations
 
 import argparse
 import base64
 import json
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
+sys.path.insert(0, str(_ROOT))
+
+from app_config import trial_days  # noqa: E402
+
 _PRIVATE_KEY_PATH = _HERE / "license_private_key.txt"
 _PUBLIC_KEY_PATH = _ROOT / "license_public_key.txt"
+_LICENSING_PY = _ROOT / "licensing.py"
 
-# Must match dashboards/app_metadata.py::APP_ID
 APP_ID = "finops-optimizer"
 
 
 def _b64u(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _sync_embedded_public_key(pub_b64: str) -> None:
+    if not _LICENSING_PY.is_file():
+        return
+    text = _LICENSING_PY.read_text(encoding="utf-8")
+    marker = "_EMBEDDED_PUBLIC_KEY_B64 = "
+    if marker not in text:
+        return
+    lines = text.splitlines()
+    out = []
+    for line in lines:
+        if line.startswith(marker):
+            out.append(f'{marker}"{pub_b64.strip()}"')
+        else:
+            out.append(line)
+    _LICENSING_PY.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 def cmd_keygen(_args) -> None:
@@ -56,11 +57,13 @@ def cmd_keygen(_args) -> None:
         encoding=serialization.Encoding.Raw,
         format=serialization.PublicFormat.Raw,
     )
+    pub_b64 = base64.b64encode(pub_raw).decode()
     _PRIVATE_KEY_PATH.write_text(base64.b64encode(priv_raw).decode() + "\n", encoding="utf-8")
-    _PUBLIC_KEY_PATH.write_text(base64.b64encode(pub_raw).decode() + "\n", encoding="utf-8")
+    _PUBLIC_KEY_PATH.write_text(pub_b64 + "\n", encoding="utf-8")
+    _sync_embedded_public_key(pub_b64)
     print(f"Private key (SECRET) -> {_PRIVATE_KEY_PATH}")
     print(f"Public key  (ship)   -> {_PUBLIC_KEY_PATH}")
-    print("\nKeep the private key safe. Anyone with it can issue valid licenses.")
+    print("Embedded public key updated in licensing.py")
 
 
 def _load_private_key():
@@ -71,6 +74,12 @@ def _load_private_key():
 
 
 def cmd_issue(args) -> None:
+    if not args.workspace_id or not str(args.workspace_id).strip():
+        raise SystemExit("--workspace-id is required for all license keys.")
+
+    if args.trial and not args.until and not args.months and args.days == 365:
+        args.days = trial_days()
+
     if args.until:
         exp = date.fromisoformat(args.until)
     elif args.months:
@@ -78,10 +87,13 @@ def cmd_issue(args) -> None:
     else:
         exp = date.today() + timedelta(days=args.days)
 
+    plan = "trial" if args.trial else args.plan
+
     payload = {
         "app": APP_ID,
         "customer": args.customer,
-        "plan": args.plan,
+        "plan": plan,
+        "workspace_id": str(args.workspace_id).strip(),
         "iat": date.today().isoformat(),
         "exp": exp.isoformat(),
     }
@@ -98,6 +110,7 @@ def cmd_issue(args) -> None:
 
 
 def main() -> None:
+    default_trial = trial_days()
     parser = argparse.ArgumentParser(description="FinOps Optimizer license tool")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -105,8 +118,19 @@ def main() -> None:
 
     p_issue = sub.add_parser("issue", help="Issue a signed license key")
     p_issue.add_argument("--customer", required=True, help="Customer / org name")
-    p_issue.add_argument("--plan", default="custom", help="monthly | yearly | custom")
-    p_issue.add_argument("--days", type=int, default=365, help="Validity in days (default 365)")
+    p_issue.add_argument(
+        "--workspace-id", required=True,
+        help="Databricks workspace ID (shown in the app when no key is installed)",
+    )
+    p_issue.add_argument("--plan", default="yearly", help="monthly | yearly | custom | trial")
+    p_issue.add_argument(
+        "--trial", action="store_true",
+        help=f"Trial key (plan=trial, default {default_trial} days from config.toml)",
+    )
+    p_issue.add_argument(
+        "--days", type=int, default=365,
+        help=f"Validity in days (trial default: {default_trial} from config.toml)",
+    )
     p_issue.add_argument("--months", type=int, help="Validity in months (30d each)")
     p_issue.add_argument("--until", help="Explicit expiry date YYYY-MM-DD")
 

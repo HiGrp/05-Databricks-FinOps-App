@@ -1,9 +1,7 @@
 """Central configuration — read from ``config.toml`` with environment overrides.
 
-Priority (highest first):
-    1. Environment variable (APP_DEV_MODE, APP_LICENSE_ENABLED, APP_TRIAL_DAYS)
-    2. ``config.toml`` value
-    3. Hard-coded default
+In **distribution builds** (``.dist_build`` marker present), licensing is always
+enforced and cannot be disabled via config.toml or APP_LICENSE_ENABLED.
 """
 
 from __future__ import annotations
@@ -14,12 +12,18 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent
 _CONFIG_PATH = _ROOT / "config.toml"
+_DIST_MARKER = _ROOT / ".dist_build"
+
+
+def is_distribution_build() -> bool:
+    """True when running from a compiled customer package."""
+    return _DIST_MARKER.is_file()
 
 
 def _load_toml() -> dict:
     try:
         import tomllib  # Python 3.11+
-    except ModuleNotFoundError:  # pragma: no cover - older runtimes
+    except ModuleNotFoundError:  # pragma: no cover
         try:
             import tomli as tomllib  # type: ignore
         except ModuleNotFoundError:
@@ -47,26 +51,30 @@ def _env_bool(name: str, default: bool) -> bool:
 
 def is_dev_mode() -> bool:
     """True -> serve local fake data instead of querying Databricks."""
+    if is_distribution_build():
+        return False
     cfg = _config().get("app", {})
     return _env_bool("APP_DEV_MODE", bool(cfg.get("dev_mode", False)))
 
 
 def license_enabled() -> bool:
-    """True -> enforce the trial / license gate."""
+    """True -> enforce the license gate."""
+    if is_distribution_build():
+        return True
     cfg = _config().get("license", {})
     return _env_bool("APP_LICENSE_ENABLED", bool(cfg.get("enabled", True)))
 
 
 def trial_days() -> int:
-    """Number of free trial days before the app locks."""
+    """Default trial length for ``license_tool issue --trial``."""
     raw = os.environ.get("APP_TRIAL_DAYS")
-    if raw:
+    if raw is not None:
         try:
-            return max(0, int(raw))
+            return max(1, int(raw.strip()))
         except ValueError:
             pass
     cfg = _config().get("license", {})
     try:
-        return max(0, int(cfg.get("trial_days", 7)))
+        return max(1, int(cfg.get("trial_days", 7)))
     except (TypeError, ValueError):
         return 7

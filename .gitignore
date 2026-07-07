@@ -11,6 +11,11 @@ tools/license_private_key.txt
 # Generated fake data dumps (dev mode)
 dev_data/data/
 
-# Obfuscated build output
-build/
+# Cython intermediate build (repo root only — dist/ is committed for clients)
+/build/
+*.c
+/.dist_build
+
+# Legacy
 .pyarmor/
+pyarmor.bug.log

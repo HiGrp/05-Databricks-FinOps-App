@@ -18,10 +18,3 @@ def get_cache_key() -> tuple:
 
 def bump_cache_epoch() -> None:
     st.session_state["data_cache_epoch"] = st.session_state.get("data_cache_epoch", 0) + 1
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def cached_execute(cache_key: tuple, sql: str):
-    from prod_data import _execute_sql_impl
-
-    return _execute_sql_impl(sql)

@@ -60,7 +60,8 @@ def render_cluster_policies(run_query) -> None:
 def render_cluster_events(run_query) -> None:
     page_header("Cluster events", "Cluster event timeline")
     from dashboards.query_cache import get_cache_key
-    from prod_data import CLUSTER_EVENTS_TABLE, fetch_cluster_events_cached
+    from prod_data import CLUSTER_EVENTS_TABLE
+    from streamlit_caches import fetch_cluster_events_cached
 
     key = get_cache_key()
     with st.spinner("Loading cluster events..."):

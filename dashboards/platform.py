@@ -6,13 +6,15 @@ import streamlit as st
 from dashboards.chart_help import HELP
 from dashboards.components import data_table, metrics_row, page_header, show_empty
 from dashboards.query_cache import get_cache_key
-from prod_data import (
-    DRIVER_LOG_VOLUME,
-    INGESTION_LOG_TABLE,
+from streamlit_caches import (
     fetch_clusters_api_cached,
     fetch_ingestion_logs_cached,
     fetch_jobs_api_cached,
     fetch_warehouses_api_cached,
+)
+from prod_data import (
+    DRIVER_LOG_VOLUME,
+    INGESTION_LOG_TABLE,
     list_driver_log_files,
     read_driver_log,
 )

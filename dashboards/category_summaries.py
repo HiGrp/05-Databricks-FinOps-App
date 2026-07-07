@@ -156,7 +156,11 @@ def render_sql_summary(run_query) -> None:
 
 def render_platform_summary(run_query) -> None:
     from dashboards.query_cache import get_cache_key
-    from prod_data import fetch_clusters_api_cached, fetch_jobs_api_cached, fetch_warehouses_api_cached
+    from streamlit_caches import (
+        fetch_clusters_api_cached,
+        fetch_jobs_api_cached,
+        fetch_warehouses_api_cached,
+    )
 
     key = get_cache_key()
     try:

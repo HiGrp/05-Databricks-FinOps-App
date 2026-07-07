@@ -239,8 +239,9 @@ def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
 
         return execute_sql_dev(sql)
 
-    from dashboards.query_cache import cached_execute, get_cache_key
+    from dashboards.query_cache import get_cache_key
     from dashboards.sql_tables import adapt_sql_for_databricks
+    from streamlit_caches import cached_execute
 
     adapted = adapt_sql_for_databricks(sql)
     return cached_execute(get_cache_key(), adapted)
@@ -292,29 +293,4 @@ def load_jsonl_file_prod(relative_path: str) -> pd.DataFrame | None:
         return pd.DataFrame()
 
 
-import streamlit as st  # noqa: E402 — cache decorators for API helpers
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_clusters_api_cached(_cache_key: tuple) -> dict:
-    return fetch_clusters_api()
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_warehouses_api_cached(_cache_key: tuple) -> dict:
-    return fetch_warehouses_api()
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_jobs_api_cached(_cache_key: tuple) -> dict:
-    return fetch_jobs_api()
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_cluster_events_cached(_cache_key: tuple) -> pd.DataFrame:
-    return fetch_cluster_events_api()
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_ingestion_logs_cached(_cache_key: tuple) -> pd.DataFrame:
-    return fetch_ingestion_logs()
+# Cached API helpers live in streamlit_caches.py (plain Python — Streamlit inspect).
