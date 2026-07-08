@@ -14,13 +14,11 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## 2. Clés licence (une fois, chez toi)
-
+## 2. Clés licence (une fois, chez toi) - Déjà fait
 ```bash
 python tools/license_tool.py keygen
 ```
-
-Secret : `tools/license_private_key.txt` — ne jamais committer.
+Secret : `tools/license_private_key.txt` - ne jamais committer.
 
 Durée essai auto (sans clé) : `config.toml` → `[license] trial_days = 7`
 
@@ -34,16 +32,18 @@ git push
 ```
 
 ## 4. Client déploie
+Le client doit générer un token avec scope "files" : Settings → Developer → Access tokens → Generate new token → Other APIs.
+
 
 ```bash
 export DATABRICKS_HOST="https://adb-7405611146197933.13.azuredatabricks.net"
-export DATABRICKS_TOKEN="dapi677c294ebda4035d303a86c136c5dd26-2"
+export DATABRICKS_TOKEN="dapi7cbc5fb2302b3cb14f6accca31280691-2"
 export MSYS_NO_PATHCONV=1
 
-databricks sync ./dist /Users/issame.hamaoui@hi-group.fr/finops-app --full
+databricks sync ./dist /Shared/finops-app --full
 ```
 
-Databricks App + SQL warehouse. Pas d'upload UI.
+Pas d'upload UI (problèmes dans les .so)
 
 ## 5. Licence
 
