@@ -4,6 +4,14 @@ Free app that reads Databricks **system tables** and shows spend, waste, and wha
 
 Powered by [HI Group](https://higroup.systems).
 
+
+<img width="1857" height="937" alt="Optim" src="https://github.com/user-attachments/assets/d1ae96e5-edef-4f3f-8bf0-6fa0ea6d8560" />
+<img width="1918" height="937" alt="Home" src="https://github.com/user-attachments/assets/f331702b-8728-43ed-9dcd-ebe9825f6c4b" />
+<img width="1228" height="625" alt="Cost" src="https://github.com/user-attachments/assets/049a4e09-4893-4fa4-aae1-3ae818a38a98" />
+<img width="1245" height="631" alt="Compute" src="https://github.com/user-attachments/assets/030f9988-a9bb-4fc0-8c5f-40123596d70d" />
+<img width="1254" height="631" alt="Security" src="https://github.com/user-attachments/assets/a98764ca-a7fc-4b32-a245-dee2c8a3f7ad" />
+
+
 ## Run it
 
 From the project root:
