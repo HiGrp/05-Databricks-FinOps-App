@@ -26,8 +26,6 @@ Open **Setup**. Two steps:
 
 Click **Refresh** on any page after that.
 
-Credentials stay in the session. There is no `.env` file.
-
 On a **Databricks App**, the workspace connection is automatic. You still run the `GRANT` script. Attach a SQL warehouse with resource key `sql-warehouse` (`app/app.yaml`).
 
 ## What you see
