@@ -1,62 +1,36 @@
 # FinOps Optimizer
 
-App Streamlit Databricks (FinOps, system tables). Licence offline.
+**How much is your Databricks wasting — and how do you fix it?**
+Free, open-source Databricks App. Reads your `system` tables, shows spend and savings in money, with the fix for each item.
 
-## 1. Dev local
+Powered by [HI Group](https://higroup.systems).
 
-```bash
-pip install -r requirements.txt
-```
-
-`config.toml` → `dev_mode = true`, puis :
+## Try demo (no Databricks)
 
 ```bash
-streamlit run app.py
+pip install -r app/requirements.txt
+streamlit run app/app.py
 ```
 
-## 2. Clés licence (une fois, chez toi) - Déjà fait
-```bash
-python tools/license_tool.py keygen
-```
-Secret : `tools/license_private_key.txt` - ne jamais committer.
+## Connect your workspace
 
-Durée essai auto (sans clé) : `config.toml` → `[license] trial_days = 7`
+1. Open the app → **🚀 Setup**
+2. Fill in **Workspace URL**, **SQL warehouse ID**, **token** (or service principal)
+3. Click **Connect**
+4. Run the **GRANT** SQL (step 2)
+5. **Run test** (step 3)
 
-## 3. Build + push client
+Done. Turn off **Demo data** in the sidebar if needed.
 
-```bash
-bash build.sh
-git add .
-git commit -m "Update dist"
-git push
-```
-
-## 4. Client déploie
-Le client doit générer un token avec scope "files" : Settings → Developer → Access tokens → Generate new token → Other APIs.
-
+## Deploy on Databricks
 
 ```bash
-export DATABRICKS_HOST="https://adb-7405611146197933.13.azuredatabricks.net"
-export DATABRICKS_TOKEN="dapi7cbc5fb2302b3cb14f6accca31280691-2"
-export MSYS_NO_PATHCONV=1
-
-databricks sync ./dist /Shared/finops-app --full
+databricks bundle deploy --var="warehouse_id=<WAREHOUSE_ID>"
+databricks bundle run finops_optimizer
 ```
 
-Pas d'upload UI (problèmes dans les .so)
+Connection is automatic. Run the GRANT SQL from Setup only.
 
-## 5. Licence
+## License
 
-**Auto :** le client déploie → essai `trial_days` jours, sans clé, sans te contacter.
-
-**Payant :** après l'essai, tu émets une clé :
-
-```bash
-python tools/license_tool.py issue --customer "ACME" --plan yearly --days 365
-```
-
-Le client la colle dans la sidebar. Pas de lien workspace.
-
-## Variables prod (optionnel)
-
-`DATABRICKS_WAREHOUSE_ID`, `FINOPS_INGESTION_LOG_TABLE`, `FINOPS_CLUSTER_EVENTS_TABLE`, `FINOPS_DRIVER_LOG_VOLUME`
+[MIT](LICENSE)

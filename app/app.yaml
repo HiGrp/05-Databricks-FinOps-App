@@ -1,0 +1,18 @@
+command:
+  - streamlit
+  - run
+  - app.py
+
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  # Default negotiated discount vs Databricks list price, in % (e.g. "20").
+  - name: FINOPS_DISCOUNT_PCT
+    value: "0"
+  # Optional (Platform/Compute pages).
+  - name: FINOPS_INGESTION_LOG_TABLE
+    value: ""
+  - name: FINOPS_CLUSTER_EVENTS_TABLE
+    value: ""
+  - name: FINOPS_DRIVER_LOG_VOLUME
+    value: ""

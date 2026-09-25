@@ -1,0 +1,12 @@
+"""Product identity — single source of truth for the UI."""
+
+APP_ID = "finops-optimizer"
+APP_NAME = "FinOps Optimizer"
+APP_SIDEBAR_TAGLINE = "Cost · Savings · Governance"
+APP_VERSION = "2.0.0"
+APP_ICON = "💰"
+APP_LOGO = "FO"
+APP_VENDOR = "HI Group"
+APP_VENDOR_URL = "https://higroup.systems"
+APP_SUPPORT_EMAIL = "contact@higroup.systems"
+APP_CONTACT_URL = "mailto:contact@higroup.systems?subject=FinOps%20Optimizer%20-%20going%20further"

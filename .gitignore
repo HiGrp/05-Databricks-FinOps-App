@@ -4,15 +4,8 @@ __pycache__/
 .venv/
 venv/
 
-tools/license_private_key.txt
-dev_data/data/
+# Databricks bundles
+.databricks/
 
-/build/
-*.c
-/.dist_build
-
-# track dist/ .so, ignore elsewhere
-*.so
-!dist/
-!dist/**/
-!dist/**/*.so
+# Local dev data dumps
+**/dev_data/data/

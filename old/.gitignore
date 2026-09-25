@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+tools/license_private_key.txt
+dev_data/data/
+
+/build/
+*.c
+/.dist_build
+
+# track dist/ .so, ignore elsewhere
+*.so
+!dist/
+!dist/**/
+!dist/**/*.so
