@@ -1,4 +1,4 @@
-"""Setup — connect (app) + permissions (Databricks)."""
+"""Setup - connect (app) + permissions (Databricks)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def _grants_sql(catalog: str, principal: str) -> str:
 
 
 def _render_connect_step() -> None:
-    st.markdown("### 1. Connect — in this app")
+    st.markdown("### 1. Connect - in this app")
     st.markdown(
         "**What you need from Databricks** (gather these first):\n"
         "- Your **workspace URL**\n"
@@ -31,9 +31,9 @@ def _render_connect_step() -> None:
         "**Access token** *(pick this if you are alone / testing)*\n"
         "- This is **your** Databricks login, like a temporary password\n"
         "- Databricks → **Settings** → **Developer** → **Access tokens** → **Generate new token**\n"
-        "- Copy it (starts with `dapi…`) — you won't see it again\n\n"
+        "- Copy it (starts with `dapi…`) - you won't see it again\n\n"
         "**Service principal** *(pick this for production / shared install)*\n"
-        "- A **robot account**, not a person — for apps running 24/7 for a team\n"
+        "- A **robot account**, not a person - for apps running 24/7 for a team\n"
         "- Databricks → **Admin console** → **Identity and access** → **Service principals**\n"
         "- Create one → **Secrets** tab → generate **OAuth secret** → copy **Client ID** + **Secret**"
     )
@@ -41,8 +41,8 @@ def _render_connect_step() -> None:
     cfg = get_config()
 
     if running_in_databricks():
-        st.success("Running as a Databricks App — connection is automatic.")
-        st.caption(f"Warehouse `{cfg.get('warehouse_id') or '—'}` · identity `{grant_principal()}`")
+        st.success("Running as a Databricks App - connection is automatic.")
+        st.caption(f"Warehouse `{cfg.get('warehouse_id') or '-'}` · identity `{grant_principal()}`")
     elif cfg.get("connected"):
         st.success(f"Connected to `{cfg.get('host')}` as `{grant_principal()}`")
         if st.button("Disconnect", key="dbx_disconnect"):
@@ -95,7 +95,7 @@ def _render_connect_step() -> None:
 
 
 def _render_permissions_step() -> None:
-    st.markdown("### 2. Permissions — in Databricks")
+    st.markdown("### 2. Permissions - in Databricks")
     principal = grant_principal()
     connected = is_connected()
 
@@ -115,7 +115,7 @@ def _render_permissions_step() -> None:
             f"(the identity you connected with) on catalog **`{get_catalog()}`**."
         )
     else:
-        st.info("Connect in step 1 first — the script will show your exact user or service principal.")
+        st.info("Connect in step 1 first - the script will show your exact user or service principal.")
 
     st.code(_grants_sql(get_catalog(), principal), language="sql")
 

@@ -1,5 +1,5 @@
 -- ============================================================
--- system_demo — DDL Script
+-- system_demo - DDL Script
 -- Miroir du catalog system (tables MANAGED)
 -- Usage : FinOps / Gouvernance / Compute / MLflow / Serving
 -- ============================================================

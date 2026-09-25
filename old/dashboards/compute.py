@@ -21,7 +21,7 @@ from dashboards.date_filter import f_workspace
 
 
 def render_cluster_inventory(run_query) -> None:
-    page_header("Cluster list", f"{fq('compute.clusters')} — current fleet")
+    page_header("Cluster list", f"{fq('compute.clusters')} - current fleet")
     df, err = run_query(f"""
         SELECT cluster_name, owned_by, worker_count,
                driver_node_type, auto_termination_minutes, data_security_mode

@@ -2,7 +2,7 @@ version: 1
 name: finops-optimizer
 description: >
   FinOps and cost optimization for Databricks workspaces.
-  Track DBU spend, find waste, and act on savings — powered by system tables.
+  Track DBU spend, find waste, and act on savings - powered by system tables.
 
 user_api_scopes:
   - sql

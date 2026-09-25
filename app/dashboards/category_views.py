@@ -1,4 +1,4 @@
-"""Technical pages — sections with charts and to-do lists."""
+"""Technical pages - sections with charts and to-do lists."""
 
 from __future__ import annotations
 

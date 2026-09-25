@@ -110,7 +110,7 @@ def render_team_attribution(run_query) -> None:
         metrics_row([
             {"label": "Untagged DBU", "value": f"{pct:.0f}%", "delta": f"{untagged:,.0f} DBU",
              "delta_tone": tone,
-             "help": "Share of DBU with no Team tag — cannot be charged back."},
+             "help": "Share of DBU with no Team tag - cannot be charged back."},
             {"label": "Tagged DBU", "value": f"{100 - pct:.0f}%",
              "help": "Share of DBU carrying a Team tag."},
         ])

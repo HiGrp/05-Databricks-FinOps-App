@@ -1,4 +1,4 @@
-"""Central configuration — read from ``config.toml`` with environment overrides.
+"""Central configuration - read from ``config.toml`` with environment overrides.
 
 In **distribution builds** (``.dist_build`` marker present), licensing is always
 enforced and cannot be disabled via config.toml or APP_LICENSE_ENABLED.

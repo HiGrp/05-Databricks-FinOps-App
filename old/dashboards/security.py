@@ -35,7 +35,7 @@ def render_audit_overview(run_query) -> None:
 
 
 def render_permission_denied(run_query) -> None:
-    page_header("Access denied", "403 events — permission issues")
+    page_header("Access denied", "403 events - permission issues")
     df, err = run_query(f"""
         SELECT user_email, service_name, action_name, event_ts, error_message
         FROM access_audit_parsed

@@ -1,36 +1,48 @@
 # FinOps Optimizer
 
-**How much is your Databricks wasting — and how do you fix it?**
-Free, open-source Databricks App. Reads your `system` tables, shows spend and savings in money, with the fix for each item.
+Free app that reads Databricks **system tables** and shows spend, waste, and what to fix.
 
 Powered by [HI Group](https://higroup.systems).
 
-## Try demo (no Databricks)
+## Run it
+
+From the project root:
 
 ```bash
 pip install -r app/requirements.txt
 streamlit run app/app.py
 ```
 
-## Connect your workspace
+**Demo data** in the sidebar is off by default. Turn it on to browse with fake data and no Databricks account.
 
-1. Open the app → **🚀 Setup**
-2. Fill in **Workspace URL**, **SQL warehouse ID**, **token** (or service principal)
-3. Click **Connect**
-4. Run the **GRANT** SQL (step 2)
-5. **Run test** (step 3)
+## Connect a workspace
 
-Done. Turn off **Demo data** in the sidebar if needed.
+Open **Setup**. Two steps:
 
-## Deploy on Databricks
+1. **In the app** - workspace URL, SQL warehouse ID, then either:
+   - **Access token** (your user), or
+   - **Service principal** (client ID + secret)
+2. **In Databricks** - SQL Editor, same warehouse, run the `GRANT` script shown on the page (metastore admin, once).
 
-```bash
-databricks bundle deploy --var="warehouse_id=<WAREHOUSE_ID>"
-databricks bundle run finops_optimizer
-```
+Click **Refresh** on any page after that.
 
-Connection is automatic. Run the GRANT SQL from Setup only.
+Credentials stay in the session. There is no `.env` file.
 
-## License
+On a **Databricks App**, the workspace connection is automatic. You still run the `GRANT` script. Attach a SQL warehouse with resource key `sql-warehouse` (`app/app.yaml`).
 
-[MIT](LICENSE)
+## What you see
+
+Sidebar: **catalog** (default `system`), **period** (last 7 / 30 / 90 days, 12 months, or custom - always through yesterday), pages, **Demo data**.
+
+| Page | What it shows |
+|---|---|
+| Home | Spend, avoidable cost, waste removed, health score, top actions |
+| Action plan | Issues to fix, with owner and steps |
+| FinOps | Cost, trends, SKUs, chargeback, prices |
+| Optimization | Waste, slow SQL, failed jobs, auto-stop |
+| Security | Audit, access denied, Unity Catalog, tokens |
+| Compute | Clusters, tags, runtime, events |
+| Jobs | Runs, success, duration, tasks |
+| SQL | Query performance, queues, warehouses |
+| Platform | API inventory, ingestion, driver logs |
+| Setup | Connect + permissions |

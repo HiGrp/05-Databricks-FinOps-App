@@ -1,4 +1,4 @@
-"""Cost helpers — list cost from billing_cost, adjusted by the negotiated discount."""
+"""Cost helpers - list cost from billing_cost, adjusted by the negotiated discount."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ def fmt_money(value) -> str:
     try:
         number = float(value)
     except (TypeError, ValueError):
-        return "—"
+        return "-"
     if number != number:
-        return "—"
+        return "-"
     return f"{CURRENCY_SYMBOL}{number:,.0f}"
 
 

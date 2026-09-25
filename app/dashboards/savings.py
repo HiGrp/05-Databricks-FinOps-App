@@ -1,4 +1,4 @@
-"""Savings engine — waste rules priced in money, from system tables.
+"""Savings engine - waste rules priced in money, from system tables.
 
 Each rule returns the cost in scope and an estimated saving. Saving factors are
 deliberately conservative and shown to the user next to each estimate.

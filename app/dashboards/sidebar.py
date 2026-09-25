@@ -1,4 +1,4 @@
-"""Sidebar — brand, scope, navigation, data source."""
+"""Sidebar - brand, scope, navigation, data source."""
 
 from __future__ import annotations
 

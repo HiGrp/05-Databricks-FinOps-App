@@ -7,13 +7,13 @@ env:
   # Bound by the workspace admin at install time (see manifest resource_specs).
   - name: DATABRICKS_WAREHOUSE_ID
     valueFrom: sql-warehouse
-  # Optional — Delta table for ingestion pipeline logs (Platform page).
+  # Optional - Delta table for ingestion pipeline logs (Platform page).
   - name: FINOPS_INGESTION_LOG_TABLE
     value: ""
-  # Optional — Delta table for cluster events (Compute page).
+  # Optional - Delta table for cluster events (Compute page).
   - name: FINOPS_CLUSTER_EVENTS_TABLE
     value: ""
-  # Optional — Unity Catalog volume path for driver logs (Platform page).
+  # Optional - Unity Catalog volume path for driver logs (Platform page).
   - name: FINOPS_DRIVER_LOG_VOLUME
     value: ""
 

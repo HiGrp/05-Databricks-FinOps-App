@@ -48,7 +48,7 @@ def render_success_rates(run_query) -> None:
     if show_error(err):
         return
     bar_chart(
-        df, "job_name", "success_pct", "Success rate (%) — fix low bars first",
+        df, "job_name", "success_pct", "Success rate (%) - fix low bars first",
         COLORS["success"], orientation="h", help=HELP["success_rate"],
     )
     data_table(df, title="Success rate by job", help=HELP["tbl_job_success"])

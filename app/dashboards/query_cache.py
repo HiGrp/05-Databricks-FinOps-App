@@ -1,4 +1,4 @@
-"""SQL query cache — TTL + manual refresh via cache epoch."""
+"""SQL query cache - TTL + manual refresh via cache epoch."""
 
 from __future__ import annotations
 

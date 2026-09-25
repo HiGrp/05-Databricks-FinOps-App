@@ -1,4 +1,4 @@
-"""Composants UI partagés — cartes, charts, headers (100% composants Streamlit natifs)."""
+"""Composants UI partagés - cartes, charts, headers (100% composants Streamlit natifs)."""
 
 from __future__ import annotations
 
@@ -100,15 +100,15 @@ def int_or_zero(value) -> int:
 
 def format_int(value, suffix: str = "") -> str:
     if value is None:
-        return "—"
+        return "-"
     try:
         number = float(value)
         if number != number:  # NaN
-            return "—"
+            return "-"
         text = f"{int(number):,}"
         return f"{text} {suffix}".strip() if suffix else text
     except (TypeError, ValueError):
-        return "—"
+        return "-"
 
 
 def _coerce_label(value) -> str:
@@ -126,7 +126,7 @@ def _coerce_label(value) -> str:
 
 
 def _chart_labels(*columns: str) -> dict[str, str]:
-    """Never use empty strings — Plotly.js shows them as 'undefined'."""
+    """Never use empty strings - Plotly.js shows them as 'undefined'."""
     return {
         col: _FIELD_LABELS.get(col, col.replace("_", " ").title())
         for col in columns
@@ -192,7 +192,7 @@ def _fix_plotly_traces(fig: go.Figure) -> None:
 
 
 def _fix_plotly_layout(fig: go.Figure) -> None:
-    """Drop axis titles — chart titles live in Streamlit markdown above the figure."""
+    """Drop axis titles - chart titles live in Streamlit markdown above the figure."""
     fig.update_layout(
         title=None,
         hovermode="closest",
@@ -218,7 +218,7 @@ def _fix_plotly_layout(fig: go.Figure) -> None:
 
 
 def _show_plotly_chart(fig: go.Figure) -> None:
-    """theme=None — Streamlit's default plotly theme renders empty axis titles as 'undefined'."""
+    """theme=None - Streamlit's default plotly theme renders empty axis titles as 'undefined'."""
     st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
@@ -303,13 +303,13 @@ def section_header(title: str, description: str | None = None, *, icon: str | No
 
 _ERROR_HINTS = (
     (("INSUFFICIENT_PERMISSIONS", "USE SCHEMA", "USE CATALOG", "PERMISSION_DENIED"),
-     "Missing permissions on system tables — complete **Setup → Permissions** (step 2)."),
+     "Missing permissions on system tables - complete **Setup → Permissions** (step 2)."),
     (("No SQL warehouse", "warehouse"),
-     "SQL warehouse missing or unreachable — check **Setup → Connect** (step 1)."),
+     "SQL warehouse missing or unreachable - check **Setup → Connect** (step 1)."),
     (("TABLE_OR_VIEW_NOT_FOUND", "SCHEMA_NOT_FOUND"),
-     "System schema not available — ask an account admin to enable system tables."),
+     "System schema not available - ask an account admin to enable system tables."),
     (("default auth", "cannot configure default credentials", "Config: host", "discovery_url", "Not connected"),
-     "Not connected to Databricks — complete **Setup → Connect** (step 1)."),
+     "Not connected to Databricks - complete **Setup → Connect** (step 1)."),
 )
 
 _CONNECTION_ERRORS = (
@@ -376,7 +376,7 @@ def _render_chart_title(title: str, help: str | None = None) -> None:
 
 
 def kpi_cards(items: list[dict]) -> None:
-    """KPIs via st.metric — max 3 per row (mobile-friendly)."""
+    """KPIs via st.metric - max 3 per row (mobile-friendly)."""
     if not items:
         return
     for start in range(0, len(items), 3):
@@ -397,7 +397,7 @@ def kpi_cards(items: list[dict]) -> None:
                     delta_color = "normal"
                 st.metric(
                     label=display_label,
-                    value=item.get("value", "—"),
+                    value=item.get("value", "-"),
                     delta=delta,
                     delta_color=delta_color if delta else "off",
                     help=item.get("help"),
@@ -632,7 +632,7 @@ def two_column_charts(left_fn, right_fn) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Status KPI Cards — coloration conditionnelle (vert / orange / rouge)
+# Status KPI Cards - coloration conditionnelle (vert / orange / rouge)
 # ---------------------------------------------------------------------------
 
 _STATUS_COLORS = {

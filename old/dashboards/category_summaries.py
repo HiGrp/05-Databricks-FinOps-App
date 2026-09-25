@@ -27,7 +27,7 @@ def render_finops_summary(run_query) -> None:
         return
     r = df.iloc[0]
     cost = r["cost"]
-    cost_val = f"${float(cost):,.0f}" if cost is not None and cost == cost else "—"
+    cost_val = f"${float(cost):,.0f}" if cost is not None and cost == cost else "-"
     kpi_cards([
         {"label": "DBU", "value": format_int(r["dbu"]), "icon": "💰", "delta": _period(),
          "help": "Total DBU in the selected period."},
@@ -116,7 +116,7 @@ def render_jobs_summary(run_query) -> None:
     r = df.iloc[0]
     total = int_or_zero(r["runs"])
     ok = int_or_zero(r["ok"])
-    pct = f"{ok / total * 100:.0f}%" if total else "—"
+    pct = f"{ok / total * 100:.0f}%" if total else "-"
     avg_min = r["avg_min"]
     if avg_min != avg_min:  # NaN
         avg_min = None
@@ -125,7 +125,7 @@ def render_jobs_summary(run_query) -> None:
          "help": "Job runs in the period."},
         {"label": "Success rate", "value": pct, "icon": "✅",
          "help": "Share of runs that succeeded."},
-        {"label": "Avg duration", "value": f"{avg_min} min" if avg_min is not None else "—", "icon": "⏱️",
+        {"label": "Avg duration", "value": f"{avg_min} min" if avg_min is not None else "-", "icon": "⏱️",
          "help": "Average job run duration."},
     ])
 
@@ -149,7 +149,7 @@ def render_sql_summary(run_query) -> None:
          "help": "SQL queries in the period."},
         {"label": "Avg latency", "value": format_int(r["avg_ms"], "ms"), "icon": "⏱️",
          "help": "Average query duration."},
-        {"label": "Cache hit", "value": f"{cache_val}%" if cache_val is not None else "—", "icon": "💨",
+        {"label": "Cache hit", "value": f"{cache_val}%" if cache_val is not None else "-", "icon": "💨",
          "help": "Queries served from result cache."},
     ])
 

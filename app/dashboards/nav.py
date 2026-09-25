@@ -1,4 +1,4 @@
-"""Navigation — sidebar pages, in display order, grouped."""
+"""Navigation - sidebar pages, in display order, grouped."""
 
 from __future__ import annotations
 

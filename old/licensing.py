@@ -1,4 +1,4 @@
-"""License enforcement — offline Ed25519 + automatic local trial.
+"""License enforcement - offline Ed25519 + automatic local trial.
 
 - First launch: auto trial for ``trial_days`` (config.toml), no key required.
 - After trial: vendor-signed key required (not bound to workspace_id).
@@ -142,7 +142,7 @@ def _ensure_trial_started() -> date:
 
 
 def _auto_trial_status() -> dict | None:
-    """Local auto trial — starts on first use, no vendor key."""
+    """Local auto trial - starts on first use, no vendor key."""
     days = trial_days()
     started = _ensure_trial_started()
     exp = started + timedelta(days=days)

@@ -1,4 +1,4 @@
-"""Accès production — system tables (SQL), API REST, logs optionnels."""
+"""Accès production - system tables (SQL), API REST, logs optionnels."""
 
 from __future__ import annotations
 
@@ -230,7 +230,7 @@ def execute_sql(sql: str) -> tuple[pd.DataFrame | None, str | None]:
     """Execute SQL with 5-minute cache; bust via sidebar Refresh.
 
     In dev mode (config.toml / APP_DEV_MODE) queries run against a local DuckDB
-    loaded with fake data — no Databricks connection required.
+    loaded with fake data - no Databricks connection required.
     """
     from app_config import is_dev_mode
 
@@ -293,4 +293,4 @@ def load_jsonl_file_prod(relative_path: str) -> pd.DataFrame | None:
         return pd.DataFrame()
 
 
-# Cached API helpers live in streamlit_caches.py (plain Python — Streamlit inspect).
+# Cached API helpers live in streamlit_caches.py (plain Python - Streamlit inspect).

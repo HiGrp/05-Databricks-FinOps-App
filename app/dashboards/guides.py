@@ -1,4 +1,4 @@
-"""Plain-English guide per section — what it shows, how to read it, what to do."""
+"""Plain-English guide per section - what it shows, how to read it, what to do."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ GUIDES: dict[str, Guide] = {
         ),
     ),
     "sec_finops_team": Guide(
-        "Cost by Team, CostCenter and Environment tags — exportable for chargeback.",
+        "Cost by Team, CostCenter and Environment tags - exportable for chargeback.",
         "`(not set)` is spend that nobody owns. Keep it under 5%.",
         (
             "Make the `Team` tag mandatory with a cluster policy.",

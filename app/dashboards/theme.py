@@ -1,4 +1,4 @@
-"""Design system — minimal CSS, Streamlit-native layout."""
+"""Design system - minimal CSS, Streamlit-native layout."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Global period filter — presets or custom, always ending yesterday."""
+"""Global period filter - presets or custom, always ending yesterday."""
 
 from __future__ import annotations
 

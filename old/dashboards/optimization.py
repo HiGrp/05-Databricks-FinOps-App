@@ -20,7 +20,7 @@ from dashboards.date_filter import f_event_date, f_ts_date, f_usage_date, period
 
 
 def render_ghost_clusters(run_query) -> None:
-    page_header("Weekend clusters", "Clusters active on Sat/Sun — likely waste")
+    page_header("Weekend clusters", "Clusters active on Sat/Sun - likely waste")
     wk, _ = run_query(f"""
         SELECT SUM(usage_quantity) AS total,
                SUM(CASE WHEN (CAST(strftime('%w', usage_date) AS INTEGER) + 1) IN (1, 7)
@@ -36,7 +36,7 @@ def render_ghost_clusters(run_query) -> None:
         metrics_row([
             {"label": "Weekend DBU", "value": f"{pct:.0f}%", "delta": f"{weekend:,.0f} DBU",
              "delta_tone": tone,
-             "help": "Share of DBU consumed on Sat/Sun — typically avoidable waste."},
+             "help": "Share of DBU consumed on Sat/Sun - typically avoidable waste."},
             {"label": "Weekday DBU", "value": f"{100 - pct:.0f}%",
              "help": "Share of DBU consumed Mon–Fri."},
         ])

@@ -1,5 +1,5 @@
 # ============================================================
-# FinOps Optimizer — config dev local (dist/ a son propre config.toml)
+# FinOps Optimizer - config dev local (dist/ a son propre config.toml)
 # ============================================================
 
 [app]

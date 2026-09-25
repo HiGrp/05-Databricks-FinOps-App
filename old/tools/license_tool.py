@@ -1,4 +1,4 @@
-"""Vendor-side license tool (KEEP PRIVATE — do not ship with the app)."""
+"""Vendor-side license tool (KEEP PRIVATE - do not ship with the app)."""
 
 from __future__ import annotations
 

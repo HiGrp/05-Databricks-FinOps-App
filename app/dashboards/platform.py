@@ -1,4 +1,4 @@
-"""Platform dashboards — API, ingestion, logs."""
+"""Platform dashboards - API, ingestion, logs."""
 
 import pandas as pd
 import streamlit as st

@@ -1,4 +1,4 @@
-"""Streamlit @cache_data wrappers — must stay plain Python (not Cython).
+"""Streamlit @cache_data wrappers - must stay plain Python (not Cython).
 
 Streamlit calls inspect.getsource() on cached functions; Cython .so functions fail.
 """

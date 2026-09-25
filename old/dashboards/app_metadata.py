@@ -1,4 +1,4 @@
-"""Product identity — single source of truth for UI and Marketplace metadata."""
+"""Product identity - single source of truth for UI and Marketplace metadata."""
 
 APP_ID = "finops-optimizer"
 APP_NAME = "FinOps Optimizer"

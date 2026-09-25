@@ -1,4 +1,4 @@
-"""Single-page category orchestrator — all sections, most relevant first."""
+"""Single-page category orchestrator - all sections, most relevant first."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def _run_sections(
         st.divider()
         summary_slot = _section_shell("Summary", "Key metrics at a glance", help=HELP["sec_summary"])
 
-    # Phase 1 — all section titles + loading hints visible at once
+    # Phase 1 - all section titles + loading hints visible at once
     pending: list[tuple] = []
     for entry in sections:
         sec_icon, title, subtitle, render_fn = entry[:4]
@@ -60,7 +60,7 @@ def _run_sections(
         st.divider()
         pending.append((_section_shell(full_title, subtitle, help=sec_help), render_fn))
 
-    # Phase 2 — fill each slot (SQL runs sequentially; cache helps on refresh)
+    # Phase 2 - fill each slot (SQL runs sequentially; cache helps on refresh)
     st.session_state["_suppress_page_header"] = True
     try:
         if summary_slot is not None:

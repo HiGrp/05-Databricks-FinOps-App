@@ -24,7 +24,7 @@ from dashboards.date_filter import f_ts_date
 
 
 def render_query_performance(run_query) -> None:
-    page_header("Query performance", f"{fq('query.history')} — latency")
+    page_header("Query performance", f"{fq('query.history')} - latency")
     df, err = run_query(f"""
         SELECT ROUND(quantile_cont(total_duration_ms, 0.95), 0) AS p95_ms,
                ROUND(AVG(total_duration_ms), 0) AS avg_ms,
@@ -67,7 +67,7 @@ def render_queue_analysis(run_query) -> None:
         metrics_row([
             {"label": "Queued >10s", "value": f"{pct:.0f}%", "delta": f"{queued:,} queries",
              "delta_tone": tone,
-             "help": "Share of queries that waited more than 10s for warehouse capacity — sizing signal."},
+             "help": "Share of queries that waited more than 10s for warehouse capacity - sizing signal."},
             {"label": "Avg queue", "value": format_int(q.iloc[0]["avg_wait"], "ms"),
              "help": "Average time queued waiting for capacity."},
         ])

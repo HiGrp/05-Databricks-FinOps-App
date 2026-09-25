@@ -1,5 +1,5 @@
 # Marketplace / Provider Console listing metadata (app-level).
-# Individual detections or notebooks are not listed here — see README.md.
+# Individual detections or notebooks are not listed here - see README.md.
 
 name: FinOps Optimizer
 version: "1.0.0"
@@ -8,7 +8,7 @@ short_description: >
 long_description: >
   FinOps Optimizer helps platform and FinOps teams monitor Databricks costs,
   identify waste, and prioritize fixes. Explore DBU trends, top spenders,
-  team chargeback, ghost clusters, failed jobs, slow SQL, and more — built
+  team chargeback, ghost clusters, failed jobs, slow SQL, and more - built
   on native system tables, with no data leaving your workspace.
 
 categories:

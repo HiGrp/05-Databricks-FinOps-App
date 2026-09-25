@@ -1,4 +1,4 @@
-"""Home page — global KPIs."""
+"""Home page - global KPIs."""
 
 from dashboards.chart_help import HELP
 from dashboards.components import (

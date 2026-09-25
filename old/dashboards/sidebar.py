@@ -1,4 +1,4 @@
-"""Sidebar — filters and navigation."""
+"""Sidebar - filters and navigation."""
 
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ def render_sidebar(run_query: Callable | None = None) -> str:
 
 
 def _render_support_footer(sb) -> None:
-    """Persistent support contact — visible on every page (license, help, etc.)."""
+    """Persistent support contact - visible on every page (license, help, etc.)."""
     from dashboards.app_metadata import APP_SUPPORT_EMAIL
 
     mail = APP_SUPPORT_EMAIL

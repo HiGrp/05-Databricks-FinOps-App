@@ -1,4 +1,4 @@
-"""Findings — concrete problems detected in the data, each with owner and fix.
+"""Findings - concrete problems detected in the data, each with owner and fix.
 
 Every detector runs one or two cached queries and returns a ``Finding`` or
 ``None``. A detector is attached to the page sections where it is shown; the
@@ -152,7 +152,7 @@ def _rule_detector(rule: savings.Rule) -> Detector:
             return None
         return Finding(
             id=rule.id, domain=pb["domain"], severity=_sev_money(monthly),
-            title=f"{rule.title} — {len(ev)} found",
+            title=f"{rule.title} - {len(ev)} found",
             impact=f"~{fmt_money(monthly)} / month",
             why=f"{pb['why']} Estimate: {rule.assumption}",
             steps=pb["steps"], effort=rule.effort, owner=pb["owner"], monthly_usd=monthly,
@@ -522,7 +522,7 @@ def _personal_tokens(run_query) -> Finding | None:
     return Finding(
         id="personal_tokens", domain="Security", severity="High" if many_ips else "Medium",
         title=f"{len(df)} users sign in with personal access tokens"
-              + (f" — {many_ips} from 5+ IP addresses" if many_ips else ""),
+              + (f" - {many_ips} from 5+ IP addresses" if many_ips else ""),
         impact="Long-lived secrets tied to people",
         why="Personal access tokens (PAT) are long-lived and often shared in scripts. One token used from many IPs may be leaked.",
         steps=(
@@ -699,7 +699,7 @@ def waste_removed(run_query) -> float:
 
 
 # --------------------------------------------------------------------------- #
-# Rendering — one To-do item style everywhere
+# Rendering - one To-do item style everywhere
 # --------------------------------------------------------------------------- #
 
 def _fmt_evidence(df: pd.DataFrame) -> pd.DataFrame:
@@ -745,7 +745,7 @@ def render_section_todo(section_key: str | None, run_query) -> None:
     with st.container(border=True):
         st.markdown('<p class="todo-title">✅ To do</p>', unsafe_allow_html=True)
         if detected:
-            st.caption("Detected from your data — gone automatically once the issue is fixed.")
+            st.caption("Detected from your data - gone automatically once the issue is fixed.")
             for f in sorted(detected, key=_sort_key):
                 render_todo_item(f, section_key)
         elif guide is not None:
@@ -755,7 +755,7 @@ def render_section_todo(section_key: str | None, run_query) -> None:
             label = "Good practices" if detected else "Good practices to verify"
             st.markdown(f'<p class="todo-sub">{label}</p>{items}', unsafe_allow_html=True)
             if not detected:
-                st.caption("These stay visible — they are a manual checklist, not tracked automatically.")
+                st.caption("These stay visible - they are a manual checklist, not tracked automatically.")
 
 
 def _go_to_plan() -> None:

@@ -1,4 +1,4 @@
-"""Home — spend, savings, top actions."""
+"""Home - spend, savings, top actions."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def _spend(run_query) -> tuple[float, float] | None:
 
 def _summary(spend_m: float, change: float | None, avoidable: float, high: int) -> None:
     trend = "" if change is None else f' <span class="muted">({change:+.0f}% {html.escape(comparison_label())})</span>'
-    share = f" — {avoidable / spend_m:.0%} of spend" if spend_m else ""
+    share = f" - {avoidable / spend_m:.0%} of spend" if spend_m else ""
     risks = (
         f"{high} high-priority issue{'s' if high > 1 else ''} to fix."
         if high else "No high-priority issue detected."

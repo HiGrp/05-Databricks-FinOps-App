@@ -1,4 +1,4 @@
-"""Navigation — one consolidated view per category."""
+"""Navigation - one consolidated view per category."""
 
 from __future__ import annotations
 

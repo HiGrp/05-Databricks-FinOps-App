@@ -1,4 +1,4 @@
-"""Runtime configuration — data source and discount."""
+"""Runtime configuration - data source and discount."""
 
 from __future__ import annotations
 

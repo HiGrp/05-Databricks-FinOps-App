@@ -1,4 +1,4 @@
-"""Short hover help text — simple English for the whole app."""
+"""Short hover help text - simple English for the whole app."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ HELP = {
 
     "sec_savings_scan": "Shows each waste rule with the cost in scope and a conservative monthly saving estimate.",
     "sec_savings_details": "Shows the exact clusters, jobs, and warehouses behind each saving, with the fix and a CSV export.",
-    "cat_action_plan": "Every problem detected in your data — cost, governance, performance, reliability, security — with owner and fix.",
+    "cat_action_plan": "Every problem detected in your data - cost, governance, performance, reliability, security - with owner and fix.",
     "sec_action_plan": "All findings ranked by severity, then by money at stake.",
     "sec_home_actions": "The five most important findings. The full list is in Action plan.",
 

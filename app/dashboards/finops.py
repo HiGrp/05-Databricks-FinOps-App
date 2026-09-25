@@ -1,4 +1,4 @@
-"""FinOps dashboards — net cost (list price × usage, minus discount)."""
+"""FinOps dashboards - net cost (list price × usage, minus discount)."""
 
 import streamlit as st
 
@@ -98,7 +98,7 @@ def render_team_attribution(run_query) -> None:
         metrics_row([
             {"label": "Unallocated cost", "value": fmt_money(untagged), "delta": f"{pct:.0f}% of spend",
              "delta_tone": "up" if pct > 0 else "neutral",
-             "help": "Cost with no Team tag — cannot be charged back."},
+             "help": "Cost with no Team tag - cannot be charged back."},
             {"label": "Allocated cost", "value": fmt_money(total - untagged),
              "help": "Cost carrying a Team tag."},
         ])

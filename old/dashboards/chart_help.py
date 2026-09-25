@@ -1,4 +1,4 @@
-"""Short hover help text — simple English for the whole app."""
+"""Short hover help text - simple English for the whole app."""
 
 from __future__ import annotations
 

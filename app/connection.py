@@ -1,4 +1,4 @@
-"""Databricks connection — Setup UI (session) or automatic on Databricks App."""
+"""Databricks connection - Setup UI (session) or automatic on Databricks App."""
 
 from __future__ import annotations
 
@@ -142,7 +142,7 @@ def get_workspace_client():
 
     cfg = get_config()
     if not cfg.get("connected"):
-        raise RuntimeError("Not connected — open Setup and connect your workspace.")
+        raise RuntimeError("Not connected - open Setup and connect your workspace.")
 
     host = cfg["host"]
     if cfg["auth"] == "sp":
