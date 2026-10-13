@@ -15,7 +15,9 @@ def running_in_databricks() -> bool:
 def default_data_source() -> str:
     if os.environ.get("APP_DEV_MODE", "").strip().lower() in ("1", "true", "yes"):
         return DEMO
-    return LIVE
+    if running_in_databricks():
+        return LIVE
+    return DEMO
 
 
 def is_dev_mode() -> bool:

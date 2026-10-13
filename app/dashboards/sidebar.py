@@ -63,6 +63,14 @@ def render_sidebar(run_query: Callable | None = None) -> str:
         unsafe_allow_html=True,
     )
 
+    demo = sb.toggle(
+        "Demo data",
+        value=st.session_state.data_source == DEMO,
+        key="demo_toggle",
+        help="On = demo data. Off = your workspace (connect in Setup first).",
+    )
+    st.session_state.data_source = DEMO if demo else LIVE
+
     _section_divider(sb)
     render_catalog_filter(sb)
     render_period_picker(sb)
@@ -73,14 +81,6 @@ def render_sidebar(run_query: Callable | None = None) -> str:
     _nav_buttons(sb, ["Setup"])
 
     _section_divider(sb)
-    demo = sb.toggle(
-        "Demo data",
-        value=st.session_state.data_source == DEMO,
-        key="demo_toggle",
-        help="On = demo data. Off = your workspace (connect in Setup first).",
-    )
-    st.session_state.data_source = DEMO if demo else LIVE
-
     sb.markdown(
         f"""
         <div class="sidebar-foot">
