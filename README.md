@@ -2,6 +2,8 @@
 
 Free app that reads Databricks **system tables** and shows spend, waste, and what to fix.
 
+Demo : [http://197.153.60.68:8090/](http://197.153.60.68:8090/)
+
 Powered by [HI Group](https://higroup.systems).
 
 
